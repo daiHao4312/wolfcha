@@ -1,5 +1,3 @@
-import { ALL_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, REVIEW_MODEL } from "@/types/game";
-
 const ZENMUX_API_KEY_STORAGE = "wolfcha_zenmux_api_key";
 const DASHSCOPE_API_KEY_STORAGE = "wolfcha_dashscope_api_key";
 const TOKENDANCE_API_KEY_STORAGE = "wolfcha_tokendance_api_key";
@@ -14,6 +12,41 @@ const VALIDATED_ZENMUX_KEY_STORAGE = "wolfcha_validated_zenmux_key";
 const VALIDATED_DASHSCOPE_KEY_STORAGE = "wolfcha_validated_dashscope_key";
 const VALIDATED_TOKENDANCE_KEY_STORAGE = "wolfcha_validated_tokendance_key";
 export const TOKENDANCE_BASE_URL = "https://tokendance.agent-universe.cn/gateway/v1";
+export const ZENMUX_BASE_URL_DEFAULT = "https://zenmux.ai/api/v1";
+export const DASHSCOPE_BASE_URL_DEFAULT = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+
+// 各 provider Base URL 的持久化键
+const ZENMUX_BASE_URL_STORAGE = "wolfcha_zenmux_base_url";
+const DASHSCOPE_BASE_URL_STORAGE = "wolfcha_dashscope_base_url";
+const TOKENDANCE_BASE_URL_STORAGE = "wolfcha_tokendance_base_url";
+
+// 统一 LLM provider 标识（用于后端路由）
+const LLM_PROVIDER_STORAGE = "wolfcha_llm_provider";
+
+// 思考（reasoning / thinking）总开关的持久化键
+const THINKING_ENABLED_STORAGE = "wolfcha.settings.thinking_enabled";
+
+export type LlmProvider = "dashscope" | "zenmux" | "tokendance";
+
+/** 根据 Base URL 自动推断 provider 类型 */
+export function detectProviderFromUrl(url: string): LlmProvider {
+  const lower = url.toLowerCase();
+  if (lower.includes("dashscope") || lower.includes("aliyuncs")) return "dashscope";
+  if (lower.includes("zenmux")) return "zenmux";
+  if (lower.includes("tokendance")) return "tokendance";
+  // 默认走 dashscope 分支（标准 OpenAI 兼容）
+  return "dashscope";
+}
+
+/** 读取当前 LLM provider 标识 */
+export function getLlmProvider(): string {
+  return readStorage(LLM_PROVIDER_STORAGE) || "";
+}
+
+/** 存储 LLM provider 标识 */
+export function setLlmProvider(provider: string) {
+  writeStorage(LLM_PROVIDER_STORAGE, provider);
+}
 
 function canUseStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -56,7 +89,27 @@ export function getTokendanceApiKey(): string {
 }
 
 export function getTokendanceBaseUrl(): string {
-  return TOKENDANCE_BASE_URL;
+  return readStorage(TOKENDANCE_BASE_URL_STORAGE) || TOKENDANCE_BASE_URL;
+}
+
+export function setTokendanceBaseUrl(url: string) {
+  writeStorage(TOKENDANCE_BASE_URL_STORAGE, url);
+}
+
+export function getZenmuxBaseUrl(): string {
+  return readStorage(ZENMUX_BASE_URL_STORAGE) || ZENMUX_BASE_URL_DEFAULT;
+}
+
+export function setZenmuxBaseUrl(url: string) {
+  writeStorage(ZENMUX_BASE_URL_STORAGE, url);
+}
+
+export function getDashscopeBaseUrl(): string {
+  return readStorage(DASHSCOPE_BASE_URL_STORAGE) || DASHSCOPE_BASE_URL_DEFAULT;
+}
+
+export function setDashscopeBaseUrl(url: string) {
+  writeStorage(DASHSCOPE_BASE_URL_STORAGE, url);
 }
 
 export function setMinimaxApiKey(key: string) {
@@ -69,10 +122,6 @@ export function setDashscopeApiKey(key: string) {
 
 export function setTokendanceApiKey(key: string) {
   writeStorage(TOKENDANCE_API_KEY_STORAGE, key);
-}
-
-export function setTokendanceBaseUrl() {
-  // TokenDance gateway URL is fixed for custom-key gameplay.
 }
 
 export function getMinimaxGroupId(): string {
@@ -132,39 +181,38 @@ export function hasMinimaxKey(): boolean {
 }
 
 // When custom key is enabled, keep model within providers that have keys.
-function resolveModelWhenCustomEnabled(preferred: string, fallbackPreferred: string): string {
-  const allowedProviders = new Set<(typeof ALL_MODELS)[number]["provider"]>();
-  if (hasZenmuxKey()) allowedProviders.add("zenmux");
-  if (hasDashscopeKey()) allowedProviders.add("dashscope");
-  if (hasTokendanceKey()) allowedProviders.add("tokendance");
-
-  if (allowedProviders.size === 0) return preferred;
-
-  const allowedPool = ALL_MODELS.filter((ref) => allowedProviders.has(ref.provider));
-  if (allowedPool.length === 0) return preferred;
-
-  const allowedSet = new Set(allowedPool.map((ref) => ref.model));
-  if (preferred && allowedSet.has(preferred)) return preferred;
-  if (fallbackPreferred && allowedSet.has(fallbackPreferred)) return fallbackPreferred;
-  return allowedPool[0].model;
-}
-
-function resolveModelForCurrentKeyState(
-  storedValue: string,
-  fallbackValue: string,
-  storageKey: string
-): string {
-  const base = storedValue || fallbackValue;
-  const resolved = resolveModelWhenCustomEnabled(base, fallbackValue);
-  if (resolved !== base) {
-    writeStorage(storageKey, resolved);
-  }
-  return resolved;
-}
-
 export function isCustomKeyEnabled(): boolean {
   // 所有用户必须自带 Key，只要有任意 LLM API key 配置即视为启用
   return hasZenmuxKey() || hasDashscopeKey() || hasTokendanceKey();
+}
+
+/** 检查 LLM 是否已配置（Key + 模型名均非空） */
+export function isLlmConfigured(): boolean {
+  return isCustomKeyEnabled() && !!getGeneratorModel();
+}
+
+// LLM 测试结果存储
+const LLM_TESTED_STORAGE = "wolfcha_llm_tested";
+
+/** 读取 LLM 测试是否通过 */
+export function getLlmTested(): boolean {
+  return readStorage(LLM_TESTED_STORAGE) === "true";
+}
+
+/** 写入 LLM 测试结果 */
+export function setLlmTested(value: boolean) {
+  writeStorage(LLM_TESTED_STORAGE, value ? "true" : "false");
+}
+
+/** 读取思考总开关（默认关闭，避免拖慢响应与占满 token）。 */
+export function getThinkingEnabled(): boolean {
+  return readStorage(THINKING_ENABLED_STORAGE) === "true";
+}
+
+/** 写入思考总开关。 */
+export function setThinkingEnabled(value: boolean) {
+  if (!canUseStorage()) return;
+  window.localStorage.setItem(THINKING_ENABLED_STORAGE, value ? "true" : "false");
 }
 
 export function setCustomKeyEnabled(value: boolean) {
@@ -180,7 +228,6 @@ export function setCustomKeyEnabled(value: boolean) {
 
 export function getSelectedModels(): string[] {
   if (!canUseStorage()) return [];
-  if (!isCustomKeyEnabled()) return [];
   const raw = window.localStorage.getItem(SELECTED_MODELS_STORAGE);
   if (!raw) return [];
   try {
@@ -194,10 +241,6 @@ export function getSelectedModels(): string[] {
 
 export function setSelectedModels(models: string[]) {
   if (!canUseStorage()) return;
-  if (!isCustomKeyEnabled()) {
-    window.localStorage.removeItem(SELECTED_MODELS_STORAGE);
-    return;
-  }
   const normalized = models.map((m) => String(m ?? "").trim()).filter(Boolean);
   if (normalized.length === 0) {
     window.localStorage.removeItem(SELECTED_MODELS_STORAGE);
@@ -207,55 +250,26 @@ export function setSelectedModels(models: string[]) {
 }
 
 export function getGeneratorModel(): string {
-  // When custom key is disabled, always use GENERATOR_MODEL directly
-  // (independent of AI player models in AVAILABLE_MODELS)
-  if (!isCustomKeyEnabled()) {
-    return GENERATOR_MODEL;
-  }
-  const stored = readStorage(GENERATOR_MODEL_STORAGE);
-  return resolveModelForCurrentKeyState(stored, GENERATOR_MODEL, GENERATOR_MODEL_STORAGE);
+  return readStorage(GENERATOR_MODEL_STORAGE);
 }
 
 export function setGeneratorModel(model: string) {
-  if (!isCustomKeyEnabled()) {
-    writeStorage(GENERATOR_MODEL_STORAGE, "");
-    return;
-  }
   writeStorage(GENERATOR_MODEL_STORAGE, model);
 }
 
 export function getSummaryModel(): string {
-  // When custom key is disabled, always use SUMMARY_MODEL directly
-  // (independent of AI player models in AVAILABLE_MODELS)
-  if (!isCustomKeyEnabled()) {
-    return SUMMARY_MODEL;
-  }
-  const stored = readStorage(SUMMARY_MODEL_STORAGE);
-  return resolveModelForCurrentKeyState(stored, SUMMARY_MODEL, SUMMARY_MODEL_STORAGE);
+  return readStorage(SUMMARY_MODEL_STORAGE);
 }
 
 export function setSummaryModel(model: string) {
-  if (!isCustomKeyEnabled()) {
-    writeStorage(SUMMARY_MODEL_STORAGE, "");
-    return;
-  }
   writeStorage(SUMMARY_MODEL_STORAGE, model);
 }
 
 export function getReviewModel(): string {
-  // When custom key is disabled, always use REVIEW_MODEL directly
-  if (!isCustomKeyEnabled()) {
-    return REVIEW_MODEL;
-  }
-  const stored = readStorage(REVIEW_MODEL_STORAGE);
-  return resolveModelForCurrentKeyState(stored, REVIEW_MODEL, REVIEW_MODEL_STORAGE);
+  return readStorage(REVIEW_MODEL_STORAGE);
 }
 
 export function setReviewModel(model: string) {
-  if (!isCustomKeyEnabled()) {
-    writeStorage(REVIEW_MODEL_STORAGE, "");
-    return;
-  }
   writeStorage(REVIEW_MODEL_STORAGE, model);
 }
 
@@ -274,7 +288,11 @@ export function clearApiKeys() {
   window.localStorage.removeItem(VALIDATED_ZENMUX_KEY_STORAGE);
   window.localStorage.removeItem(VALIDATED_DASHSCOPE_KEY_STORAGE);
   window.localStorage.removeItem(VALIDATED_TOKENDANCE_KEY_STORAGE);
-  window.localStorage.removeItem("wolfcha_tokendance_base_url");
+  window.localStorage.removeItem(ZENMUX_BASE_URL_STORAGE);
+  window.localStorage.removeItem(DASHSCOPE_BASE_URL_STORAGE);
+  window.localStorage.removeItem(TOKENDANCE_BASE_URL_STORAGE);
+  window.localStorage.removeItem(LLM_PROVIDER_STORAGE);
+  window.localStorage.removeItem(LLM_TESTED_STORAGE);
   window.localStorage.removeItem("wolfcha_validated_tokendance_base_url");
 }
 

@@ -22,7 +22,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
           onCheckedChange?.(!checked);
         }}
         className={cn(
-          "inline-flex h-6 w-11 items-center rounded-full border transition-colors",
+          "inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 p-0.5 transition-colors",
           checked
             ? "bg-[var(--color-accent)] border-[var(--color-accent)]"
             : "bg-[var(--bg-secondary)] border-[var(--border-color)]",
@@ -34,7 +34,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         <span
           className={cn(
             "h-4 w-4 rounded-full bg-[var(--text-inverse)] shadow transition-transform",
-            checked ? "translate-x-5" : "translate-x-1"
+            checked ? "translate-x-[20px]" : "translate-x-0"
           )}
         />
       </button>

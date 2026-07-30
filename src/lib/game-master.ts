@@ -11,15 +11,12 @@ import {
   type Alignment,
   type DailySummaryVoteData,
   isWolfRole,
-  ALL_MODELS,
-  PLAYER_MODELS,
-  PROJECT_MODELS,
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
 import { sampleModelRefs, type GeneratedCharacter } from "./character-generator";
 import { aiLogger } from "./ai-logger";
-import { getGeneratorModel, getSummaryModel } from "@/lib/api-keys";
+import { getGeneratorModel, getLlmProvider, getSummaryModel } from "@/lib/api-keys";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import type { PromptResult } from "@/game/core/types";
 import { buildCachedSystemMessageFromParts } from "./prompt-utils";
@@ -38,22 +35,15 @@ function shuffleArray<T>(array: T[]): T[] {
 function getRandomModelRef(): ModelRef {
   const fallback = sampleModelRefs(1)[0];
   if (fallback) return fallback;
-  if (PLAYER_MODELS.length === 0) {
-    // Fallback to GENERATOR_MODEL if no models available
-    return getModelRefForModel(getGeneratorModel());
-  }
-  const randomIndex = Math.floor(Math.random() * PLAYER_MODELS.length);
-  return PLAYER_MODELS[randomIndex];
+  // 无可用模型时回退到生成器模型
+  return getModelRefForModel(getGeneratorModel());
 }
 
 const phaseManager = new PhaseManager();
 
 function getModelRefForModel(model: string): ModelRef {
-  return (
-    PROJECT_MODELS.find((ref) => ref.model === model) ??
-    ALL_MODELS.find((ref) => ref.model === model) ??
-    { provider: "zenmux" as const, model }
-  );
+  const provider = getLlmProvider() as ModelRef["provider"];
+  return { provider: provider || "dashscope", model };
 }
 
 function sanitizeModelArtifacts(text: string): string {

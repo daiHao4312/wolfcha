@@ -1,10 +1,5 @@
 import { generateJSON, generateCompletionStream, stripMarkdownCodeFences } from "./llm";
 import {
-  ALL_MODELS,
-  GENERATOR_MODEL,
-  PLAYER_MODELS,
-  PROJECT_MODELS,
-  filterPlayerModels,
   type GameScenario,
   type ModelRef,
   type Persona,
@@ -12,6 +7,7 @@ import {
 } from "@/types/game";
 import {
   getGeneratorModel,
+  getLlmProvider,
   getSelectedModels,
   hasDashscopeKey,
   hasTokendanceKey,
@@ -61,72 +57,22 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function getModelRefForModel(model: string): ModelRef {
-  return (
-    PROJECT_MODELS.find((ref) => ref.model === model) ??
-    ALL_MODELS.find((ref) => ref.model === model) ??
-    { provider: "zenmux" as const, model }
-  );
+  const provider = getLlmProvider() as ModelRef["provider"];
+  return { provider: provider || "dashscope", model };
 }
 
 export const sampleModelRefs = (count: number): ModelRef[] => {
-  // Default pool when custom key is not enabled
-  const defaultPool =
-    PLAYER_MODELS.length > 0
-      ? PLAYER_MODELS
-      : [getModelRefForModel(GENERATOR_MODEL)];
-
-  const pool = (() => {
-    if (!isCustomKeyEnabled()) return defaultPool;
-
-    // When custom key is enabled, use ALL_MODELS as the full available pool
-    const fullPool = ALL_MODELS.length > 0 ? ALL_MODELS : defaultPool;
-
-    const allowedProviders = new Set<ModelRef["provider"]>();
-    if (hasZenmuxKey()) allowedProviders.add("zenmux");
-    if (hasDashscopeKey()) allowedProviders.add("dashscope");
-    if (hasTokendanceKey()) allowedProviders.add("tokendance");
-    if (allowedProviders.size === 0) return defaultPool;
-
-    // Filter by allowed providers, then exclude non-player models
-    const allowedPool = filterPlayerModels(
-      fullPool.filter((ref) => allowedProviders.has(ref.provider))
-    );
-    if (allowedPool.length === 0) return defaultPool;
-
-    // Filter by user's selected models - STRICTLY respect user selection
-    const selectedModels = getSelectedModels();
-    if (selectedModels.length === 0) return allowedPool;
-    
-    // Only use models the user explicitly selected
-    const selectedPool = allowedPool.filter((ref) => selectedModels.includes(ref.model));
-    
-    // If user selected models but none are in allowedPool, try to find them in fullPool
-    // This handles cases where user selected models from a different provider
-    if (selectedPool.length === 0) {
-      const fullSelectedPool = filterPlayerModels(
-        fullPool.filter((ref) => selectedModels.includes(ref.model) && allowedProviders.has(ref.provider))
-      );
-      if (fullSelectedPool.length > 0) return fullSelectedPool;
-      
-      // Last resort: only return models that user actually selected, even if empty
-      // This prevents using models the user didn't choose
-      console.warn("[sampleModelRefs] User selected models not found in allowed pool:", selectedModels);
-    }
-    
-    // Return only user-selected models, never fall back to all models
-    return selectedPool.length > 0 ? selectedPool : allowedPool.slice(0, 1);
-  })();
+  const provider = getLlmProvider() as ModelRef["provider"] || "dashscope";
+  const selectedModels = getSelectedModels();
+  const pool: ModelRef[] = (selectedModels.length > 0
+    ? selectedModels
+    : [getGeneratorModel()]
+  ).map((model) => ({ provider, model }));
 
   if (!Number.isFinite(count) || count <= 0) return [];
-
-  if (count <= pool.length) {
-    return shuffleArray(pool).slice(0, count);
-  }
-
+  if (count <= pool.length) return shuffleArray(pool).slice(0, count);
   const out = shuffleArray(pool);
-  while (out.length < count) {
-    out.push(pool[Math.floor(Math.random() * pool.length)]);
-  }
+  while (out.length < count) out.push(pool[Math.floor(Math.random() * pool.length)]);
   return out;
 };
 
@@ -714,27 +660,30 @@ export async function generateCharacters(
     if (finalizedCharacters.filter(Boolean).length < baseProfiles.length) {
       const cleaned = stripMarkdownCodeFences(accumulatedContent);
       const fullResult = parseLLMJson<unknown>(cleaned);
-      if (!fullResult) {
-        throw new Error("Character generation returned invalid JSON");
+      if (fullResult) {
+        const normalized = normalizeGeneratedCharacters(fullResult);
+        const alignedCharacters = alignCharactersToProfiles(normalized.characters, baseProfiles);
+
+        if (alignedCharacters) {
+          // 补充未生成的角色
+          for (let i = 0; i < alignedCharacters.length; i++) {
+            if (finalizedCharacters[i]) continue;
+
+            const character = finalizeCharacterForProfile(alignedCharacters[i], baseProfiles[i]);
+            if (!character) continue;
+
+            finalizedCharacters[i] = character;
+            options?.onCharacter?.(i, character);
+          }
+        }
       }
+      // 整体解析失败时不抛错，保留已生成的部分角色
+    }
 
-      const normalized = normalizeGeneratedCharacters(fullResult);
-      const alignedCharacters = alignCharactersToProfiles(normalized.characters, baseProfiles);
-
-      if (!alignedCharacters) {
-        throw new Error("Character generation returned invalid schema");
-      }
-
-      // 补充未生成的角色
-      for (let i = 0; i < alignedCharacters.length; i++) {
-        if (finalizedCharacters[i]) continue;
-
-        const character = finalizeCharacterForProfile(alignedCharacters[i], baseProfiles[i]);
-        if (!character) continue;
-
-        finalizedCharacters[i] = character;
-        options?.onCharacter?.(i, character);
-      }
+    // 过滤掉未生成的空位，保留有效角色
+    const validCharacters = finalizedCharacters.filter(Boolean);
+    if (validCharacters.length === 0) {
+      throw new Error("Character generation returned no valid characters");
     }
 
     await aiLogger.log({
@@ -744,7 +693,7 @@ export async function generateCharacters(
         messages: [{ role: "user", content: fullPrompt }],
       },
       response: { 
-        content: JSON.stringify(finalizedCharacters.map((c) => ({
+        content: JSON.stringify(validCharacters.map((c) => ({
           displayName: c.displayName,
           hiddenCommunicationProfile: {
             werewolfExperience: c.persona.werewolfExperience,
@@ -762,14 +711,15 @@ export async function generateCharacters(
       },
     });
 
-    return finalizedCharacters;
+    return validCharacters;
   };
 
   let lastError: unknown;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       console.log(
-        `[character-gen] Attempt ${attempt + 1}/2, customKeyEnabled: ${isCustomKeyEnabled()}, hasZenmux: ${hasZenmuxKey()}, hasDashscope: ${hasDashscopeKey()}, hasTokendance: ${hasTokendanceKey()}`
+        `[character-gen] Attempt ${attempt + 1}/${MAX_ATTEMPTS}, customKeyEnabled: ${isCustomKeyEnabled()}, hasZenmux: ${hasZenmuxKey()}, hasDashscope: ${hasDashscopeKey()}, hasTokendance: ${hasTokendanceKey()}`
       );
       return await runOnce();
     } catch (error) {
@@ -787,14 +737,14 @@ export async function generateCharacters(
         throw error;
       }
       
-      if (attempt === 0) {
+      if (attempt < MAX_ATTEMPTS - 1) {
         continue;
       }
       console.error("Character generation failed:", error);
       await aiLogger.log({
         type: "character_generation",
-        request: { 
-          model: GENERATOR_MODEL,
+        request: {
+          model: getGeneratorModel(),
           messages: [{ role: "user", content: "(two-stage generation)" }],
         },
         response: { content: "[]", duration: 0 },

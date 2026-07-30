@@ -104,3 +104,10 @@ export const difficultyAtom = atom(
     set(rawDifficultyAtom, normalizeDifficulty(next));
   }
 );
+
+// 思考（reasoning / thinking）总开关：默认关闭，避免拖慢响应与占满 token。
+// 存储键需与 api-keys.ts 的 THINKING_ENABLED_STORAGE 保持一致，供非 React 环境读取。
+export const thinkingEnabledAtom = atomWithStorage<boolean>(
+  "wolfcha.settings.thinking_enabled",
+  false
+);

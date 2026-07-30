@@ -128,7 +128,8 @@
     },
     "sealHint": {
       "ready": "按下印章以生效",
-      "waiting": "签署名字后才可生效"
+      "waiting": "签署名字后才可生效",
+      "configureLlm": "请先在游戏设置中配置语言模型并通过测试"
     },
     "transition": {
       "title": "游戏开始",
@@ -203,22 +204,6 @@
   "settings": {
     "title": "设置",
     "description": "调整偏好并导出日志",
-    "about": {
-      "title": "关于我们",
-      "description": "了解 Wolfcha",
-      "appName": "Wolfcha（猹人杀）",
-      "version": "版本号：v{version}",
-      "group": {
-        "title": "加入用户群",
-        "description": "扫码入群，反馈问题与建议",
-        "alt": "Wolfcha 用户群",
-        "missing": "未找到群组图片（public/group.png）"
-      },
-      "back": "返回设置",
-      "cardTitle": "关于我们",
-      "cardDescription": "Logo、版本号、入群二维码",
-      "view": "查看"
-    },
     "audio": {
       "bgmVolume": "背景音量",
       "masterSwitch": "总开关",
@@ -227,6 +212,32 @@
       "aiVoiceDescription": "控制 AI 角色语音播放",
       "autoAdvance": "自动播放对话",
       "autoAdvanceDesc": "开启后将自动推进对话，无需按回车"
+    },
+    "thinking": {
+      "title": "AI 深度思考",
+      "description": "开启后 AI 会先推理再作答，质量更高，但响应更慢、更耗 token"
+    },
+    "models": {
+      "title": "模型配置",
+      "description": "配置语言模型与语音模型",
+      "enterToOpen": "进入配置",
+      "back": "返回设置",
+      "test": "测试",
+      "testing": "测试中…",
+      "testOk": "可用",
+      "testFail": "不可用",
+      "llm": {
+        "title": "语言模型",
+        "compatible": "兼容 OpenAI 接口，填写任意 OpenAI 兼容服务的地址与密钥",
+        "apiKey": "API Key",
+        "baseUrl": "API Base URL",
+        "model": "模型名称"
+      },
+      "tts": {
+        "title": "语音模型",
+        "apiKey": "API Key",
+        "groupId": "Group ID"
+      }
     },
     "logs": {
       "title": "日志",

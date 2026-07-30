@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DASHSCOPE_VALIDATION_MODEL, TOKENDANCE_VALIDATION_MODEL, ZENMUX_VALIDATION_MODEL } from "@/types/game";
 import { TOKENDANCE_BASE_URL } from "@/lib/api-keys";
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
@@ -28,7 +27,7 @@ async function validateZenmuxKey(apiKey: string): Promise<ValidationResult> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: ZENMUX_VALIDATION_MODEL,
+        model: "google/gemini-3.1-flash-lite",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1,
       }),
@@ -142,7 +141,7 @@ async function validateTokendanceKey(apiKey: string, baseUrl: string): Promise<V
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: TOKENDANCE_VALIDATION_MODEL,
+        model: "minimax-m2.7",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1,
       }),
@@ -239,7 +238,7 @@ async function validateDashscopeKey(apiKey: string): Promise<ValidationResult> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: DASHSCOPE_VALIDATION_MODEL,
+        model: "qwen3.7-flash",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1,
       }),

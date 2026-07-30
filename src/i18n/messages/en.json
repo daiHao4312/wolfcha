@@ -128,7 +128,8 @@
     },
     "sealHint": {
       "ready": "Press the seal to begin",
-      "waiting": "Sign your name first"
+      "waiting": "Sign your name first",
+      "configureLlm": "Please configure and test your language model in settings first"
     },
     "transition": {
       "title": "Game begins",
@@ -203,22 +204,6 @@
   "settings": {
     "title": "Settings",
     "description": "Adjust preferences and export logs",
-    "about": {
-      "title": "About",
-      "description": "Learn about Wolfcha",
-      "appName": "Wolfcha",
-      "version": "Version: v{version}",
-      "group": {
-        "title": "Join the community",
-        "description": "Scan to join and share feedback",
-        "alt": "Wolfcha community group",
-        "missing": "Group image not found (public/group.png)"
-      },
-      "back": "Back to settings",
-      "cardTitle": "About",
-      "cardDescription": "Logo, version, and community QR",
-      "view": "View"
-    },
     "audio": {
       "bgmVolume": "Background volume",
       "masterSwitch": "Master switch",
@@ -227,6 +212,32 @@
       "aiVoiceDescription": "Control AI character voice playback",
       "autoAdvance": "Auto-advance dialogue",
       "autoAdvanceDesc": "Automatically advance dialogue without pressing Enter"
+    },
+    "thinking": {
+      "title": "AI deep thinking",
+      "description": "When on, AI reasons before answering: higher quality, but slower and more tokens"
+    },
+    "models": {
+      "title": "Model settings",
+      "description": "Configure language and voice models",
+      "enterToOpen": "Configure",
+      "back": "Back to settings",
+      "test": "Test",
+      "testing": "Testing…",
+      "testOk": "Available",
+      "testFail": "Unavailable",
+      "llm": {
+        "title": "Language model",
+        "compatible": "OpenAI-compatible. Use any OpenAI-compatible API endpoint and key.",
+        "apiKey": "API Key",
+        "baseUrl": "API Base URL",
+        "model": "Model name"
+      },
+      "tts": {
+        "title": "Voice model",
+        "apiKey": "API Key",
+        "groupId": "Group ID"
+      }
     },
     "logs": {
       "title": "Logs",

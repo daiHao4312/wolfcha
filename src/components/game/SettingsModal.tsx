@@ -7,7 +7,6 @@ import { useCallback, useState, useEffect, useMemo } from "react";
 import type { GameState } from "@/types/game";
 import { aiLogger, type AILogEntry } from "@/lib/ai-logger";
 import { useTranslations } from "next-intl";
-import { useAppLocale } from "@/i18n/useAppLocale";
 
 interface SoundSettingsSectionProps {
   bgmVolume: number;
@@ -119,10 +118,7 @@ export function SettingsModal({
   onExitGame,
 }: SettingsModalProps) {
   const t = useTranslations();
-  const { locale } = useAppLocale();
-  const discordInviteUrl = "https://discord.gg/ETkdZWgy";
-  const [view, setView] = useState<"settings" | "about" | "exitConfirm">("settings");
-  const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
+  const [view, setView] = useState<"settings" | "exitConfirm">("settings");
   const [aiLogs, setAiLogs] = useState<AILogEntry[]>([]);
 
   // Handle exit game confirmation
@@ -135,8 +131,6 @@ export function SettingsModal({
   const handleExitCancel = useCallback(() => {
     setView("settings");
   }, []);
-
-  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
   // Reset view to settings when modal closes
   useEffect(() => {
@@ -206,10 +200,14 @@ export function SettingsModal({
       <DialogContent className="w-[92vw] max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-[var(--text-primary)]">
-            {view === "about" ? t("settings.about.title") : view === "exitConfirm" ? t("settings.game.exitConfirmTitle") : t("settings.title")}
+            {view === "exitConfirm"
+              ? t("settings.game.exitConfirmTitle")
+              : t("settings.title")}
           </DialogTitle>
           <DialogDescription className="text-[var(--text-muted)]">
-            {view === "about" ? t("settings.about.description") : view === "exitConfirm" ? t("settings.game.exitConfirmDescription") : t("settings.description")}
+            {view === "exitConfirm"
+              ? t("settings.game.exitConfirmDescription")
+              : t("settings.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -239,55 +237,6 @@ export function SettingsModal({
               </Button>
             </div>
           </div>
-        ) : view === "about" ? (
-          <div className="space-y-5">
-            <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-card)] p-3">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/logo.png"
-                  alt={t("settings.about.appName")}
-                  className="h-12 w-12 shrink-0 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-card)] object-cover"
-                />
-                <div className="min-w-0">
-                  <div className="text-sm text-[var(--text-primary)] font-medium leading-tight">{t("settings.about.appName")}</div>
-                  <div className="text-xs text-[var(--text-muted)] mt-0.5">{t("settings.about.version", { version: appVersion })}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-secondary)] p-3">
-              <div className="text-sm font-medium text-[var(--text-primary)]">{t("settings.about.group.title")}</div>
-              <div className="text-xs text-[var(--text-muted)] mt-1">{t("settings.about.group.description")}</div>
-              <div className="mt-3 flex items-center justify-center">
-                {locale === "en" ? (
-                  <Button asChild variant="outline">
-                    <a href={discordInviteUrl} target="_blank" rel="noopener noreferrer">
-                      Discord
-                    </a>
-                  </Button>
-                ) : (
-                  <>
-                    {groupImgOk !== false && (
-                      <img
-                        src="/group.png"
-                        alt={t("settings.about.group.alt")}
-                        className="w-full max-w-[260px] max-h-[34vh] sm:max-w-[300px] sm:max-h-[42vh] rounded-md border-2 border-[var(--border-color)] bg-white object-contain"
-                        onLoad={() => setGroupImgOk(true)}
-                        onError={() => setGroupImgOk(false)}
-                      />
-                    )}
-                    {groupImgOk === false && (
-                      <div className="text-xs text-[var(--text-muted)]">{t("settings.about.group.missing")}</div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <Button type="button" variant="outline" onClick={() => setView("settings")} className="w-full">
-              {t("settings.about.back")}
-            </Button>
-          </div>
         ) : (
           <div className="space-y-6">
             <SoundSettingsSection
@@ -314,16 +263,6 @@ export function SettingsModal({
                   {t("settings.logs.export")}
                 </Button>
               </div>
-            </div>
-
-            <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-card)] p-3 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">{t("settings.about.cardTitle")}</div>
-                <div className="text-xs text-[var(--text-muted)]">{t("settings.about.cardDescription")}</div>
-              </div>
-              <Button type="button" variant="outline" onClick={() => setView("about")}>
-                {t("settings.about.view")}
-              </Button>
             </div>
 
             {/* Exit Game Button - only show when game is in progress */}

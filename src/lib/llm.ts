@@ -1,11 +1,15 @@
 import {
   getDashscopeApiKey,
+  getDashscopeBaseUrl,
   getTokendanceApiKey,
   getTokendanceBaseUrl,
   getZenmuxApiKey,
+  getZenmuxBaseUrl,
+  getThinkingEnabled,
   isCustomKeyEnabled,
+  getLlmProvider,
 } from "@/lib/api-keys";
-import { ALL_MODELS, AVAILABLE_MODELS, PROJECT_MODELS, type ModelRef } from "@/types/game";
+import { type ModelRef } from "@/types/game";
 import { gameStatsTracker } from "@/hooks/useGameStats";
 import { parseLLMJson } from "./llm-json";
 
@@ -29,36 +33,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 
-function getProviderForModel(model: string): Provider {
-   const modelRef =
-     ALL_MODELS.find((ref) => ref.model === model) ??
-     PROJECT_MODELS.find((ref) => ref.model === model);
-   return modelRef?.provider ?? "zenmux";
- }
-
-// When using built-in keys (custom disabled), only project-key models are allowed.
-// Game state may contain modelRef from a custom-key game; map it back to a built-in
-// model to avoid requiring a user-supplied key after the toggle is turned off.
-function resolveModelForBuiltin(model: string): string {
-  if (PROJECT_MODELS.some((r) => r.model === model)) return model;
-  const m =
-    AVAILABLE_MODELS.find((r) => r.provider === "zenmux") ?? AVAILABLE_MODELS[0];
-  return m?.model ?? model;
-}
-
 export function resolveApiKeySource(model: string): ApiKeySource {
    const customEnabled = isCustomKeyEnabled();
    if (!customEnabled) return "project";
-
-   const provider = getProviderForModel(model);
-   if (provider === "dashscope") {
-     return getDashscopeApiKey() ? "user" : "project";
-   }
-   if (provider === "tokendance") {
-     return getTokendanceApiKey() && getTokendanceBaseUrl() ? "user" : "project";
-   }
-   return getZenmuxApiKey() ? "user" : "project";
- }
+   return "user";
+}
 
 function buildCustomKeyHeaders(customEnabled: boolean): Record<string, string> {
   if (!customEnabled) return {};
@@ -66,11 +45,15 @@ function buildCustomKeyHeaders(customEnabled: boolean): Record<string, string> {
   const zenmuxApiKey = getZenmuxApiKey();
   const dashscopeApiKey = getDashscopeApiKey();
   const tokendanceApiKey = getTokendanceApiKey();
+  const zenmuxBaseUrl = getZenmuxBaseUrl();
+  const dashscopeBaseUrl = getDashscopeBaseUrl();
   const tokendanceBaseUrl = getTokendanceBaseUrl();
   return {
     ...(zenmuxApiKey ? { "X-Zenmux-Api-Key": zenmuxApiKey } : {}),
     ...(dashscopeApiKey ? { "X-Dashscope-Api-Key": dashscopeApiKey } : {}),
     ...(tokendanceApiKey ? { "X-Tokendance-Api-Key": tokendanceApiKey } : {}),
+    ...(zenmuxBaseUrl ? { "X-Zenmux-Base-Url": zenmuxBaseUrl } : {}),
+    ...(dashscopeBaseUrl ? { "X-Dashscope-Base-Url": dashscopeBaseUrl } : {}),
     ...(tokendanceBaseUrl ? { "X-Tokendance-Base-Url": tokendanceBaseUrl } : {}),
   };
 }
@@ -186,11 +169,24 @@ export function mergeOptionsFromModelRef<T extends GenerateOptions>(
   modelRef: ModelRef | undefined,
   options: T
 ): T {
-  if (!modelRef) return options;
   const out = { ...options } as T;
-  (out as GenerateOptions).provider = modelRef.provider;
-  if (modelRef.temperature !== undefined) (out as GenerateOptions).temperature = modelRef.temperature;
-  if (modelRef.reasoning !== undefined) (out as GenerateOptions).reasoning = modelRef.reasoning;
+
+  if (modelRef) {
+    // 已注册模型：从 modelRef 取 provider 与默认参数
+    (out as GenerateOptions).provider = modelRef.provider;
+    if (modelRef.temperature !== undefined) (out as GenerateOptions).temperature = modelRef.temperature;
+    if (modelRef.reasoning !== undefined) (out as GenerateOptions).reasoning = modelRef.reasoning;
+  } else if (isCustomKeyEnabled()) {
+    // 自定义模型无 modelRef：从存储读取 provider 供后端路由
+    const stored = getLlmProvider();
+    if (stored && !out.provider) (out as GenerateOptions).provider = stored as Provider;
+  }
+
+  // 游戏内 AI 调用的思考由用户在设置中的总开关统一控制：
+  // 仅当调用方未显式指定 reasoning 时，用全局开关覆盖。
+  if (options.reasoning === undefined) {
+    (out as GenerateOptions).reasoning = { enabled: getThinkingEnabled() };
+  }
   return out;
 }
 
@@ -436,6 +432,7 @@ function normalizeJsonText(text: string): string {
   return text
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2018\u2019]/g, "'")
+    .replace(/:\s*:/g, ":") // 修复 "key": :value 双冒号
     .replace(/,\s*([}\]])/g, "$1")
     .trim();
 }
@@ -532,9 +529,8 @@ export async function generateCompletion(
       : undefined;
 
   const customEnabled = isCustomKeyEnabled();
-  const modelToUse = customEnabled
-    ? options.model
-    : resolveModelForBuiltin(options.model);
+  const modelToUse = options.model;
+  const resolvedProvider = options.provider || (customEnabled ? getLlmProvider() : "");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
@@ -557,7 +553,7 @@ export async function generateCompletion(
       },
       body: JSON.stringify({
         model: modelToUse,
-        ...(options.provider ? { provider: options.provider } : {}),
+        ...(resolvedProvider ? { provider: resolvedProvider } : {}),
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -619,9 +615,9 @@ export async function generateCompletionBatch(
   if (!Array.isArray(requests) || requests.length === 0) return [];
 
   const customEnabled = isCustomKeyEnabled();
-  const resolvedRequests = customEnabled
-    ? requests
-    : requests.map((r) => ({ ...r, model: resolveModelForBuiltin(r.model) }));
+  const llmProvider = customEnabled ? getLlmProvider() : "";
+  const resolvedRequests = requests
+    .map((r) => (r.provider || !llmProvider ? r : { ...r, provider: llmProvider as GenerateOptions["provider"] }));
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
@@ -677,9 +673,8 @@ export async function* generateCompletionStream(
       : undefined;
 
   const customEnabled = isCustomKeyEnabled();
-  const modelToUse = customEnabled
-    ? options.model
-    : resolveModelForBuiltin(options.model);
+  const modelToUse = options.model;
+  const resolvedProvider = options.provider || (customEnabled ? getLlmProvider() : "");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
@@ -694,7 +689,7 @@ export async function* generateCompletionStream(
       },
       body: JSON.stringify({
         model: modelToUse,
-        ...(options.provider ? { provider: options.provider } : {}),
+        ...(resolvedProvider ? { provider: resolvedProvider } : {}),
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -814,36 +809,42 @@ export async function generateJSON<T>(
   }
 
   const shouldForceJsonObject =
-    !options.response_format && getProviderForModel(options.model) === "zenmux";
+    !options.response_format && getLlmProvider() === "zenmux";
 
-  const result = await generateCompletion({
-    ...options,
-    ...(shouldForceJsonObject ? { response_format: { type: "json_object" as const } } : {}),
-    messages: messagesWithFormat,
-  });
+  const jsonFormat = shouldForceJsonObject
+    ? { response_format: { type: "json_object" as const } }
+    : {};
 
-  try {
-    return parseJsonTolerant<T>(result.content);
-  } catch (firstError) {
-    const retryMessages: LLMMessage[] = [
-      ...messagesWithFormat,
-      { role: "assistant", content: result.content.slice(0, 4000) },
-      {
-        role: "user",
-        content: "The previous response was not valid JSON for the requested schema. Return valid JSON only, with no markdown and no extra text.",
-      },
-    ];
+  // 最多重试 2 次（共 3 次尝试），每次附带修正提示让模型重新输出
+  const MAX_JSON_RETRIES = 2;
+  let lastError: unknown = null;
+  let workingMessages = messagesWithFormat;
 
-    const retryResult = await generateCompletion({
+  for (let attempt = 0; attempt <= MAX_JSON_RETRIES; attempt += 1) {
+    const result = await generateCompletion({
       ...options,
-      ...(shouldForceJsonObject ? { response_format: { type: "json_object" as const } } : {}),
-      messages: retryMessages,
+      ...jsonFormat,
+      messages: workingMessages,
     });
 
     try {
-      return parseJsonTolerant<T>(retryResult.content);
-    } catch {
-      throw firstError;
+      return parseJsonTolerant<T>(result.content);
+    } catch (err) {
+      lastError = err;
+      // 最后一次不再请求
+      if (attempt === MAX_JSON_RETRIES) break;
+      // 追加修正提示，让模型重新生成
+      workingMessages = [
+        ...messagesWithFormat,
+        { role: "assistant" as const, content: result.content.slice(0, 4000) },
+        {
+          role: "user" as const,
+          content:
+            "The previous response was not valid JSON for the requested schema. Return valid JSON only, with no markdown and no extra text.",
+        },
+      ];
     }
   }
+
+  throw lastError;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
@@ -10,7 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { SoundSettingsSection } from "@/components/game/SettingsModal";
+import { ModelConfigSection } from "@/components/game/ModelConfigSection";
 import { useTranslations } from "next-intl";
 import type { Role } from "@/types/game";
 
@@ -69,6 +71,7 @@ export function GameSetupModal({
   onAutoAdvanceDialogueEnabledChange,
 }: GameSetupModalProps) {
   const t = useTranslations();
+  const [view, setView] = useState<"setup" | "models">("setup");
 
   const PLAYER_COUNT_OPTIONS = [
     { value: 8, label: t("gameSetup.playerCount.8.title"), description: t("gameSetup.playerCount.8.description"), roles: t("gameSetup.playerCount.8.roles") },
@@ -111,6 +114,14 @@ export function GameSetupModal({
   // Reset preferred role if it's no longer available for the current player count
   const effectivePreferredRole = preferredRole && availableRoles.includes(preferredRole) ? preferredRole : "";
 
+  // Modal 关闭时重置视图
+  useEffect(() => {
+    if (!open) {
+      const timer = window.setTimeout(() => setView("setup"), 200);
+      return () => window.clearTimeout(timer);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (preferredRole && !availableRoles.includes(preferredRole)) {
       onPreferredRoleChange("");
@@ -119,14 +130,24 @@ export function GameSetupModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[92vw] max-w-md">
+      <DialogContent className="w-[92vw] max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-serif text-[var(--text-primary)]">{t("gameSetup.title")}</DialogTitle>
+          <DialogTitle className="font-serif text-[var(--text-primary)]">
+            {view === "models" ? t("settings.models.title") : t("gameSetup.title")}
+          </DialogTitle>
           <DialogDescription className="text-[var(--text-muted)]">
-            {t("gameSetup.description")}
+            {view === "models" ? t("settings.models.description") : t("gameSetup.description")}
           </DialogDescription>
         </DialogHeader>
 
+        {view === "models" ? (
+          <div className="space-y-4">
+            <ModelConfigSection />
+            <Button type="button" variant="outline" onClick={() => setView("setup")} className="w-full">
+              {t("settings.models.back")}
+            </Button>
+          </div>
+        ) : (
         <div className="space-y-5">
           <div className="space-y-2">
             <div className="text-sm font-medium text-[var(--text-primary)]">{t("gameSetup.playerCountLabel")}</div>
@@ -202,6 +223,17 @@ export function GameSetupModal({
             <Switch className="shrink-0 mt-1" checked={isSpectatorMode} onCheckedChange={onSpectatorModeChange} />
           </div>
 
+          {/* 模型配置入口 */}
+          <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-card)] p-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">{t("settings.models.title")}</div>
+              <div className="text-xs text-[var(--text-muted)]">{t("settings.models.description")}</div>
+            </div>
+            <Button type="button" variant="outline" onClick={() => setView("models")}>
+              {t("settings.models.enterToOpen")}
+            </Button>
+          </div>
+
           <div className="border-t border-[var(--border-color)] pt-4">
             <div className="text-sm font-medium text-[var(--text-primary)] mb-3">{t("gameSetup.soundLabel")}</div>
             <SoundSettingsSection
@@ -216,6 +248,7 @@ export function GameSetupModal({
             />
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );

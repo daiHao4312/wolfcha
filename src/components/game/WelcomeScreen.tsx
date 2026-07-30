@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import type { DevPreset, DifficultyLevel, Role, StartGameOptions } from "@/types/game";
+import { isLlmConfigured, getLlmTested } from "@/lib/api-keys";
 import { DevModeButton } from "@/components/DevTools";
 import { GameSetupModal } from "@/components/game/GameSetupModal";
 import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
@@ -146,6 +147,7 @@ export function WelcomeScreen({
   const t = useTranslations();
 
   const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [configCheck, setConfigCheck] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const sealButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -280,8 +282,8 @@ export function WelcomeScreen({
   }, [playerCount, t]);
 
   const canConfirm = useMemo(() => {
-    return !!humanName.trim() && !isLoading && !isTransitioning;
-  }, [humanName, isLoading, isTransitioning]);
+    return !!humanName.trim() && !isLoading && !isTransitioning && isLlmConfigured() && getLlmTested();
+  }, [humanName, isLoading, isTransitioning, configCheck]);
 
   const isAnyModalOpen =
     isSetupOpen ||
@@ -448,7 +450,7 @@ export function WelcomeScreen({
 
         <GameSetupModal
           open={isSetupOpen}
-          onOpenChange={setIsSetupOpen}
+          onOpenChange={(open) => { setIsSetupOpen(open); if (!open) setConfigCheck(c => c + 1); }}
           playerCount={playerCount}
           onPlayerCountChange={setPlayerCount}
           preferredRole={preferredRole}
@@ -589,7 +591,11 @@ export function WelcomeScreen({
 
             <div className="mt-4 flex flex-col items-center gap-3">
               <div className="wc-seal-hint">
-                {mounted && canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
+                {mounted && canConfirm
+                  ? t("welcome.sealHint.ready")
+                  : !isLlmConfigured() || !getLlmTested()
+                    ? t("welcome.sealHint.configureLlm")
+                    : t("welcome.sealHint.waiting")}
               </div>
               <button
                 ref={sealButtonRef}

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ALL_MODELS, PROJECT_MODELS } from "@/types/game";
 import { TOKENDANCE_BASE_URL } from "@/lib/api-keys";
 import { Agent, setGlobalDispatcher } from "undici";
 
@@ -8,22 +7,12 @@ import { Agent, setGlobalDispatcher } from "undici";
 setGlobalDispatcher(new Agent({ connectTimeout: 60_000 }));
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
-// 百炼端点：默认走标准兼容网关，也可通过 DASHSCOPE_BASE_URL 指向专属部署端点
-const DASHSCOPE_API_BASE_URL = (process.env.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/+$/, "");
-const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completions`;
 
 // API 调用超时时间（毫秒）
 const API_TIMEOUT_MS = 60000;
 const MAX_BATCH_REQUESTS = 12;
 
 type Provider = "zenmux" | "dashscope" | "tokendance";
-
-function getProviderForModel(model: string): Provider | null {
-  const modelRef =
-    ALL_MODELS.find((ref) => ref.model === model) ??
-    PROJECT_MODELS.find((ref) => ref.model === model);
-  return modelRef?.provider ?? null;
-}
 
 function getTokendanceUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim();
@@ -32,9 +21,15 @@ function getTokendanceUrl(baseUrl: string): string {
   return `${withoutTrailingSlash}/chat/completions`;
 }
 
-/** Resolve ModelRef for a model id; used to apply per-model temperature/reasoning overrides. */
-function getModelRef(model: string): (typeof PROJECT_MODELS)[number] | (typeof ALL_MODELS)[number] | undefined {
-  return ALL_MODELS.find((ref) => ref.model === model) ?? PROJECT_MODELS.find((ref) => ref.model === model);
+// 解析 chat completions URL：去除尾部斜杠，若未以 /chat/completions 结尾则自动拼接
+function resolveChatCompletionsUrl(baseUrl: string): string {
+  const trimmed = baseUrl.trim();
+  if (!trimmed) return "";
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  if (withoutTrailingSlash.endsWith("/chat/completions")) {
+    return withoutTrailingSlash;
+  }
+  return `${withoutTrailingSlash}/chat/completions`;
 }
 
 function normalizeDashscopeModelName(model: string): string {
@@ -295,7 +290,9 @@ async function runBatchItem(
   headerApiKey: string | null,
   headerDashscopeKey: string | null,
   headerTokendanceKey: string | null,
-  headerTokendanceBaseUrl: string | null
+  headerTokendanceBaseUrl: string | null,
+  headerZenmuxBaseUrl: string | null,
+  headerDashscopeBaseUrl: string | null
 ): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string; details?: unknown }> {
   const {
     model,
@@ -313,32 +310,29 @@ async function runBatchItem(
     return { ok: false, status: 400, error: "Batch request does not support stream=true" };
   }
 
+  // provider 必须由调用方显式指定，不再通过模型列表反查
   const modelProvider: Provider | null =
-    provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : getProviderForModel(model);
+    provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : null;
   if (!modelProvider) {
-    return { ok: false, status: 400, error: `Unknown model: ${String(model ?? "").trim() || "unknown"}` };
+    return { ok: false, status: 400, error: "Unknown model: no provider specified" };
   }
 
-  const isDefaultModel = PROJECT_MODELS.some((ref) => ref.model === model);
-  if (!isDefaultModel) {
-    if (modelProvider === "zenmux" && !headerApiKey) {
-      return { ok: false, status: 401, error: "此模型需要您提供 Zenmux API Key" };
-    }
-    if (modelProvider === "dashscope" && !headerDashscopeKey) {
-      return { ok: false, status: 401, error: "此模型需要您提供百炼 API Key" };
-    }
-    if (modelProvider === "tokendance" && !headerTokendanceKey) {
-      return { ok: false, status: 401, error: "此模型需要您提供 TokenDance Key" };
-    }
+  // 所有模型均要求用户提供对应 provider 的 API Key
+  if (modelProvider === "zenmux" && !headerApiKey) {
+    return { ok: false, status: 401, error: "此模型需要您提供 Zenmux API Key" };
+  }
+  if (modelProvider === "dashscope" && !headerDashscopeKey) {
+    return { ok: false, status: 401, error: "此模型需要您提供百炼 API Key" };
+  }
+  if (modelProvider === "tokendance" && !headerTokendanceKey) {
+    return { ok: false, status: 401, error: "此模型需要您提供 TokenDance Key" };
   }
 
   const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerTokendanceKey ?? "").trim());
 
-  const modelRefOverride = getModelRef(model);
+  // 自定义模型没有预定义的 temperature 覆盖，直接使用调用方传入值或默认 0.7
   const normalizedTemperature =
-    modelRefOverride?.temperature !== undefined
-      ? modelRefOverride.temperature
-      : (typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7);
+    typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
   const cappedTemperature = (() => {
     const lower = typeof model === "string" ? model.toLowerCase() : "";
     const needZeroOne =
@@ -350,7 +344,8 @@ async function runBatchItem(
     }
     return Math.max(0, normalizedTemperature);
   })();
-  const effectiveReasoning = modelRefOverride?.reasoning !== undefined ? modelRefOverride.reasoning : reasoning;
+  // 自定义模型没有预定义的 reasoning 覆盖，直接使用调用方传入的 reasoning
+  const effectiveReasoning = reasoning;
 
   let processedMessages: unknown[] = messages;
   if (!supportsMultipartContent(model)) {
@@ -383,8 +378,8 @@ async function runBatchItem(
       model: normalizedModel,
       messages: dashscopeMessages,
       temperature: cappedTemperature,
-      // 百炼 Qwen 系列默认开启思考会拖慢响应并占满 token，这里显式关闭
-      enable_thinking: false,
+      // 百炼 Qwen 系列思考默认关闭；仅当模型配置/调用方显式开启 reasoning 时才打开
+      enable_thinking: effectiveReasoning?.enabled === true,
     };
 
     if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {
@@ -395,12 +390,16 @@ async function runBatchItem(
       requestBody.response_format = response_format;
     }
 
+    // 解析 dashscope 请求地址：优先使用自定义 Base URL，其次环境变量，最后默认值
+    const dashscopeBaseUrl = headerDashscopeBaseUrl || process.env.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1";
+    const dashscopeUrl = resolveChatCompletionsUrl(dashscopeBaseUrl);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
     let response: Response;
     try {
-      response = await fetch(DASHSCOPE_CHAT_COMPLETIONS_URL, {
+      response = await fetch(dashscopeUrl, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${dashscopeApiKey}`,
@@ -544,12 +543,15 @@ async function runBatchItem(
     requestBody.response_format = response_format;
   }
 
+  // 解析 zenmux 请求地址：优先使用自定义 Base URL
+  const zenmuxUrl = resolveChatCompletionsUrl(headerZenmuxBaseUrl || ZENMUX_API_URL);
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   let response: Response;
   try {
-    response = await fetch(ZENMUX_API_URL, {
+    response = await fetch(zenmuxUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -583,6 +585,8 @@ export async function POST(request: NextRequest) {
       const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim() || null;
       const headerTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim() || null;
       const headerTokendanceBaseUrl = request.headers.get("x-tokendance-base-url")?.trim() || null;
+      const headerZenmuxBaseUrl = request.headers.get("x-zenmux-base-url")?.trim() || null;
+      const headerDashscopeBaseUrl = request.headers.get("x-dashscope-base-url")?.trim() || null;
       const requests = body.requests as ChatRequestPayload[];
       if (requests.length > MAX_BATCH_REQUESTS) {
         return NextResponse.json(
@@ -591,7 +595,7 @@ export async function POST(request: NextRequest) {
         );
       }
       const results = await Promise.all(
-        requests.map((req) => runBatchItem(req, headerApiKey, headerDashscopeKey, headerTokendanceKey, headerTokendanceBaseUrl))
+        requests.map((req) => runBatchItem(req, headerApiKey, headerDashscopeKey, headerTokendanceKey, headerTokendanceBaseUrl, headerZenmuxBaseUrl, headerDashscopeBaseUrl))
       );
       return NextResponse.json({ results });
     }
@@ -606,12 +610,12 @@ export async function POST(request: NextRequest) {
       response_format,
       provider,
     } = body;
+    // provider 必须由调用方显式指定，不再通过模型列表反查
     const modelProvider: Provider | null =
-      provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : getProviderForModel(model);
+      provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : null;
     if (!modelProvider) {
-      // Reject unknown models early to avoid mis-routing.
       return NextResponse.json(
-        { error: `Unknown model: ${String(model ?? "").trim() || "unknown"}` },
+        { error: "Unknown model: no provider specified" },
         { status: 400 }
       );
     }
@@ -619,14 +623,12 @@ export async function POST(request: NextRequest) {
     const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
     const headerTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim();
     const headerTokendanceBaseUrl = request.headers.get("x-tokendance-base-url")?.trim();
+    const headerZenmuxBaseUrl = request.headers.get("x-zenmux-base-url")?.trim();
+    const headerDashscopeBaseUrl = request.headers.get("x-dashscope-base-url")?.trim();
     const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerTokendanceKey ?? "").trim());
-    const isDefaultModel = PROJECT_MODELS.some((ref) => ref.model === model);
-
-    const modelRefOverride = getModelRef(model);
+    // 自定义模型没有预定义的 temperature 覆盖，直接使用调用方传入值或默认 0.7
     const normalizedTemperature =
-      modelRefOverride?.temperature !== undefined
-        ? modelRefOverride.temperature
-        : (typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7);
+      typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
     // ZenMux requires temperature in 0..1; Moonshot/Kimi also
     const cappedTemperature = (() => {
       const lower = typeof model === "string" ? model.toLowerCase() : "";
@@ -639,7 +641,8 @@ export async function POST(request: NextRequest) {
       }
       return Math.max(0, normalizedTemperature);
     })();
-    const effectiveReasoning = modelRefOverride?.reasoning !== undefined ? modelRefOverride.reasoning : reasoning;
+    // 自定义模型没有预定义的 reasoning 覆盖，直接使用调用方传入的 reasoning
+    const effectiveReasoning = reasoning;
 
     // Process messages based on model capabilities
     let processedMessages = messages;
@@ -657,25 +660,24 @@ export async function POST(request: NextRequest) {
       processedMessages = stripCacheControl(processedMessages);
     }
 
-    if (!isDefaultModel) {
-      if (modelProvider === "zenmux" && !headerApiKey) {
-        return NextResponse.json(
-          { error: "此模型需要您提供 Zenmux API Key" },
-          { status: 401 }
-        );
-      }
-      if (modelProvider === "dashscope" && !headerDashscopeKey) {
-        return NextResponse.json(
-          { error: "此模型需要您提供百炼 API Key" },
-          { status: 401 }
-        );
-      }
-      if (modelProvider === "tokendance" && !headerTokendanceKey) {
-        return NextResponse.json(
-          { error: "此模型需要您提供 TokenDance Key" },
-          { status: 401 }
-        );
-      }
+    // 所有模型均要求用户提供对应 provider 的 API Key
+    if (modelProvider === "zenmux" && !headerApiKey) {
+      return NextResponse.json(
+        { error: "此模型需要您提供 Zenmux API Key" },
+        { status: 401 }
+      );
+    }
+    if (modelProvider === "dashscope" && !headerDashscopeKey) {
+      return NextResponse.json(
+        { error: "此模型需要您提供百炼 API Key" },
+        { status: 401 }
+      );
+    }
+    if (modelProvider === "tokendance" && !headerTokendanceKey) {
+      return NextResponse.json(
+        { error: "此模型需要您提供 TokenDance Key" },
+        { status: 401 }
+      );
     }
 
     if (modelProvider === "dashscope") {
@@ -694,7 +696,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const dashscopeApiUrl = DASHSCOPE_CHAT_COMPLETIONS_URL;
+      // 解析 dashscope 请求地址：优先使用自定义 Base URL，其次环境变量，最后默认值
+      const dashscopeApiUrl = resolveChatCompletionsUrl(
+        headerDashscopeBaseUrl || process.env.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      );
 
       const normalizedModel = normalizeDashscopeModelName(model);
       const normalizedResponseFormat = response_format as { type?: unknown } | undefined;
@@ -706,8 +711,8 @@ export async function POST(request: NextRequest) {
         model: normalizedModel,
         messages: dashscopeMessages,
         temperature: cappedTemperature,
-        // 百炼 Qwen 系列默认开启思考会拖慢响应并占满 token，这里显式关闭
-        enable_thinking: false,
+        // 百炼 Qwen 系列思考默认关闭；仅当模型配置/调用方显式开启 reasoning 时才打开
+        enable_thinking: effectiveReasoning?.enabled === true,
       };
 
       if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {
@@ -917,12 +922,15 @@ export async function POST(request: NextRequest) {
       requestBody.response_format = response_format;
     }
 
+    // 解析 zenmux 请求地址：优先使用自定义 Base URL
+    const zenmuxUrl = resolveChatCompletionsUrl(headerZenmuxBaseUrl || ZENMUX_API_URL);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
     let response: Response;
     try {
-      response = await fetch(ZENMUX_API_URL, {
+      response = await fetch(zenmuxUrl, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
