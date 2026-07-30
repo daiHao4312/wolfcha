@@ -161,85 +161,142 @@ export class NightPhase extends GamePhase {
     return currentState;
   }
 
+  /**
+   * 根据狼人投票结果，按多数决确定最终击杀目标
+   * 平票时由人类狼人（或第一个狼人）的选择打破平局
+   */
+  private resolveWolfVotes(
+    wolfVotes: Record<string, number>,
+    wolves: Player[],
+    humanWolf?: Player
+  ): number | undefined {
+    const votes = Object.values(wolfVotes).filter((v): v is number => v !== undefined);
+    if (votes.length === 0) return undefined;
+    if (votes.length === 1) return votes[0];
+
+    // 统计每个目标的票数
+    const voteCount = new Map<number, number>();
+    for (const target of votes) {
+      voteCount.set(target, (voteCount.get(target) ?? 0) + 1);
+    }
+
+    // 找到票数最多的目标
+    let maxVotes = 0;
+    let winners: number[] = [];
+    for (const [target, count] of voteCount) {
+      if (count > maxVotes) {
+        maxVotes = count;
+        winners = [target];
+      } else if (count === maxVotes) {
+        winners.push(target);
+      }
+    }
+
+    if (winners.length === 1) return winners[0];
+
+    // 平票：优先用人类狼人的选择打破平局
+    const tiebreaker = humanWolf ?? wolves[0];
+    const tiebreakerVote = wolfVotes[tiebreaker.playerId];
+    if (tiebreakerVote !== undefined && winners.includes(tiebreakerVote)) {
+      return tiebreakerVote;
+    }
+    return winners[0];
+  }
+
   private async runWolfAction(state: GameState, runtime: NightPhaseRuntime): Promise<GameState> {
     const { t } = getI18n();
     const speakerSystem = t("speakers.system");
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
-    let currentState = this.transitionPhase(state, "NIGHT_WOLF_ACTION");
-    currentState = addSystemMessage(currentState, systemMessages.wolfActionStart);
-    runtime.setGameState(currentState);
+
+    // 检查是否为重新进入（人类狼人已投票后继续 AI 狼人投票）
+    const existingWolfVotes = state.nightActions.wolfVotes ?? {};
+    const hasExistingVotes = Object.keys(existingWolfVotes).length > 0;
+
+    let currentState = state;
+    if (!hasExistingVotes) {
+      // 首次进入：切换阶段、添加系统消息
+      currentState = this.transitionPhase(state, "NIGHT_WOLF_ACTION");
+      currentState = addSystemMessage(currentState, systemMessages.wolfActionStart);
+      runtime.setGameState(currentState);
+    }
 
     const wolves = currentState.players.filter((p) => isWolfRole(p.role) && p.alive);
 
     if (wolves.length === 0) {
-      runtime.setIsWaitingForAI(true);
-      runtime.setDialogue(speakerSystem, uiText.wolfActing, false);
-      await playNarrator("wolfWake");
-
-      await delay(randomFakeActionDelay());
-      await runtime.waitForUnpause();
-      if (!runtime.isTokenValid(runtime.token)) return currentState;
-
-      runtime.setIsWaitingForAI(false);
-      await playNarrator("wolfClose");
+      if (!hasExistingVotes) {
+        runtime.setIsWaitingForAI(true);
+        runtime.setDialogue(speakerSystem, uiText.wolfActing, false);
+        await playNarrator("wolfWake");
+        await delay(randomFakeActionDelay());
+        await runtime.waitForUnpause();
+        if (!runtime.isTokenValid(runtime.token)) return currentState;
+        runtime.setIsWaitingForAI(false);
+        await playNarrator("wolfClose");
+      }
       return currentState;
     }
 
-    if (wolves.length > 0) {
-      const humanWolf = wolves.find((w) => w.isHuman);
-      if (humanWolf) {
-        runtime.setDialogue(speakerSystem, uiText.waitingWolf, false);
-      } else {
-        runtime.setIsWaitingForAI(true);
-        runtime.setDialogue(speakerSystem, uiText.wolfActing, false);
-      }
+    // 从已有投票恢复
+    const wolfVotes: Record<string, number> = { ...existingWolfVotes };
+    const humanWolf = wolves.find((w) => w.isHuman);
+    const aiWolves = wolves.filter((w) => !w.isHuman);
 
+    // 检查人类狼人是否需要投票
+    if (humanWolf && wolfVotes[humanWolf.playerId] === undefined) {
+      runtime.setDialogue(speakerSystem, uiText.waitingWolf, false);
       await playNarrator("wolfWake");
-
-      if (humanWolf) {
-        return currentState;
-      }
-
-      const wolfVotes: Record<string, number> = {};
-      try {
-        // 简化逻辑：第一个狼人决定目标，其他狼人自动达成共识
-        const firstWolf = wolves[0];
-        const targetSeat = await generateWolfAction(currentState, firstWolf, {});
-        
-        await runtime.waitForUnpause();
-        if (!runtime.isTokenValid(runtime.token)) return currentState;
-        
-        if (targetSeat !== undefined) {
-          // 所有狼人投票给同一个目标
-          for (const wolf of wolves) {
-            wolfVotes[wolf.playerId] = targetSeat;
-          }
-        }
-
-        currentState = {
-          ...currentState,
-          nightActions: {
-            ...currentState.nightActions,
-            wolfVotes,
-            ...(targetSeat !== undefined ? { wolfTarget: targetSeat } : {}),
-          },
-        };
-        runtime.setGameState(currentState);
-      } catch (error) {
-        console.error("[wolfcha] AI wolf vote failed:", error);
-        currentState = {
-          ...currentState,
-          nightActions: { ...currentState.nightActions, wolfVotes },
-        };
-        runtime.setGameState(currentState);
-      }
-
-      runtime.setIsWaitingForAI(false);
-
-      await playNarrator("wolfClose");
+      return currentState;
     }
 
+    // 人类狼人已投票或无人类狼人，开始/继续 AI 狼人投票
+    const hasUnvotedAI = aiWolves.some((w) => wolfVotes[w.playerId] === undefined);
+    if (hasUnvotedAI) {
+      runtime.setIsWaitingForAI(true);
+      runtime.setDialogue(speakerSystem, uiText.wolfActing, false);
+      if (!hasExistingVotes) {
+        await playNarrator("wolfWake");
+      }
+    }
+
+    try {
+      // AI 狼人逐个投票，后投票的能看到前面队友的投票（existingVotes 机制）
+      for (const wolf of aiWolves) {
+        if (wolfVotes[wolf.playerId] !== undefined) continue;
+
+        const targetSeat = await generateWolfAction(currentState, wolf, wolfVotes);
+
+        await runtime.waitForUnpause();
+        if (!runtime.isTokenValid(runtime.token)) return currentState;
+
+        if (targetSeat !== undefined) {
+          wolfVotes[wolf.playerId] = targetSeat;
+        }
+      }
+
+      // 按多数决确定最终击杀目标
+      const finalTarget = this.resolveWolfVotes(wolfVotes, wolves, humanWolf);
+
+      currentState = {
+        ...currentState,
+        nightActions: {
+          ...currentState.nightActions,
+          wolfVotes,
+          ...(finalTarget !== undefined ? { wolfTarget: finalTarget } : {}),
+        },
+      };
+      runtime.setGameState(currentState);
+    } catch (error) {
+      console.error("[wolfcha] AI wolf vote failed:", error);
+      currentState = {
+        ...currentState,
+        nightActions: { ...currentState.nightActions, wolfVotes },
+      };
+      runtime.setGameState(currentState);
+    }
+
+    runtime.setIsWaitingForAI(false);
+    await playNarrator("wolfClose");
     return currentState;
   }
 

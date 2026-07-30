@@ -811,15 +811,16 @@ export function useGameLogic() {
         hasContinuedAfterRevealRef.current = true;
         isAwaitingRoleRevealRef.current = false;
         if (s.nightActions.wolfTarget !== undefined) {
-          // 狼人已选择，继续到女巫阶段
+          // 投票已完成，继续到女巫阶段
           void runNightPhaseAction(s, token, "CONTINUE_NIGHT_AFTER_WOLF");
         } else {
           const humanWolf = s.players.find((p) => isWolfRole(p.role) && p.alive && p.isHuman);
-          if (!humanWolf) {
-            // AI 狼人需要重新选择
+          const hasHumanVoted = humanWolf && s.nightActions.wolfVotes?.[humanWolf.playerId] !== undefined;
+          if (!humanWolf || hasHumanVoted) {
+            // 无人类狼人，或人类狼人已投票但 AI 狼人尚未投票，继续投票流程
             void runNightPhaseAction(s, token, "CONTINUE_NIGHT_AFTER_GUARD");
           }
-          // 人类狼人等待输入
+          // 人类狼人未投票，等待输入
         }
         break;
       }
@@ -1839,14 +1840,16 @@ export function useGameLogic() {
   /** 夜晚行动 */
   const handleNightAction = useCallback(async (targetSeat: number, witchAction?: "save" | "poison" | "pass") => {
     if (!humanPlayer) return;
-    if (!humanPlayer.alive && gameState.phase !== "HUNTER_SHOOT") return;
+    // 使用 ref 获取最新状态，避免闭包捕获过时的 gameState
+    const latestState = gameStateRef.current;
+    if (!humanPlayer.alive && latestState.phase !== "HUNTER_SHOOT") return;
 
     const token = getToken();
     const systemMessages = getSystemMessages();
-    let currentState = gameState;
+    let currentState = latestState;
 
     // 守卫保护
-    if (gameState.phase === "NIGHT_GUARD_ACTION" && humanPlayer.role === "Guard") {
+    if (currentState.phase === "NIGHT_GUARD_ACTION" && humanPlayer.role === "Guard") {
       if (currentState.nightActions.lastGuardTarget === targetSeat) {
         toast.error(t("gameLogicMessages.guardNoRepeat"));
         return;
@@ -1864,31 +1867,30 @@ export function useGameLogic() {
       await runNightPhaseAction(currentState, token, "CONTINUE_NIGHT_AFTER_GUARD");
     }
     // 狼人击杀
-    else if (gameState.phase === "NIGHT_WOLF_ACTION" && isWolfRole(humanPlayer.role)) {
+    else if (currentState.phase === "NIGHT_WOLF_ACTION" && isWolfRole(humanPlayer.role)) {
       const targetPlayer = currentState.players.find((p) => p.seat === targetSeat);
-      const wolves = currentState.players.filter((p) => isWolfRole(p.role) && p.alive);
-      
-      // 简化逻辑：人类狼人决定目标，其他AI狼人自动达成共识
-      const wolfVotes: Record<string, number> = {};
-      for (const wolf of wolves) {
-        wolfVotes[wolf.playerId] = targetSeat;
-      }
+
+      // 只记录人类狼人的投票，AI 狼人将依次投票后按多数决确定目标
+      const wolfVotes: Record<string, number> = {
+        ...currentState.nightActions.wolfVotes,
+        [humanPlayer.playerId]: targetSeat,
+      };
 
       currentState = {
         ...currentState,
-        nightActions: { ...currentState.nightActions, wolfVotes, wolfTarget: targetSeat },
+        nightActions: { ...currentState.nightActions, wolfVotes },
       };
-      
-      // 显示狼队达成一致的确认消息
+
       setDialogue(t("speakers.system"), t("gameLogicMessages.wolfDecided", { seat: targetSeat + 1, name: targetPlayer?.displayName || "" }), false);
       setGameState(currentState);
 
       await delay(800);
       await waitForUnpause();
-      await runNightPhaseAction(currentState, token, "CONTINUE_NIGHT_AFTER_WOLF");
+      // 继续 AI 狼人投票（通过 continueNightAfterGuard 重新进入 runWolfAction）
+      await runNightPhaseAction(currentState, token, "CONTINUE_NIGHT_AFTER_GUARD");
     }
     // 女巫用药
-    else if (gameState.phase === "NIGHT_WITCH_ACTION" && humanPlayer.role === "Witch") {
+    else if (currentState.phase === "NIGHT_WITCH_ACTION" && humanPlayer.role === "Witch") {
       if (witchAction === "save" && !currentState.roleAbilities.witchHealUsed) {
         currentState = {
           ...currentState,
@@ -1914,7 +1916,7 @@ export function useGameLogic() {
       await runNightPhaseAction(currentState, token, "CONTINUE_NIGHT_AFTER_WITCH");
     }
     // 预言家查验
-    else if (gameState.phase === "NIGHT_SEER_ACTION" && humanPlayer.role === "Seer") {
+    else if (currentState.phase === "NIGHT_SEER_ACTION" && humanPlayer.role === "Seer") {
       // Check if seer has already checked this night
       if (currentState.nightActions.seerTarget !== undefined) {
         return;
@@ -1943,7 +1945,7 @@ export function useGameLogic() {
       return;
     }
     // 猎人开枪
-    else if (gameState.phase === "HUNTER_SHOOT" && humanPlayer.role === "Hunter") {
+    else if (currentState.phase === "HUNTER_SHOOT" && humanPlayer.role === "Hunter") {
       const diedAtNight = (currentState as GameState & { _hunterDiedAtNight?: boolean })._hunterDiedAtNight ?? true;
       if (targetSeat >= 0) {
         currentState = killPlayer(currentState, targetSeat);
