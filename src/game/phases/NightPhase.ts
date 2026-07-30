@@ -9,6 +9,7 @@ import {
   getRoleText,
   getWinCondition,
   buildSystemTextFromParts,
+  buildNightStrategyHints,
 } from "@/lib/prompt-utils";
 import {
   addSystemMessage,
@@ -525,9 +526,11 @@ export class NightPhase extends GamePhase {
       options: optionsList,
     });
 
+    const nightStrategy = buildNightStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...(nightStrategy ? [{ text: nightStrategy }] : []),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
@@ -586,10 +589,12 @@ export class NightPhase extends GamePhase {
         .join(t("promptUtils.gameContext.listSeparator")),
     });
 
+    const nightStrategy = buildNightStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: identitySection, cacheable: true, ttl: "1h" },
       { text: cacheableRules, cacheable: true, ttl: "1h" },
       { text: taskSection },
+      ...(nightStrategy ? [{ text: nightStrategy }] : []),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
@@ -624,9 +629,11 @@ export class NightPhase extends GamePhase {
       options,
       lastTargetLine,
     });
+    const nightStrategy = buildNightStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...(nightStrategy ? [{ text: nightStrategy }] : []),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
@@ -695,9 +702,11 @@ export class NightPhase extends GamePhase {
       poisonJsonFormat: JSON.stringify({ action: "poison", seat: 3 }),
       passJsonFormat: JSON.stringify({ action: "pass" }),
     });
+    const nightStrategy = buildNightStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...(nightStrategy ? [{ text: nightStrategy }] : []),
     ];
     const system = buildSystemTextFromParts(systemParts);
 

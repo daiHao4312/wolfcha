@@ -8,6 +8,7 @@ import {
   getRoleText,
   getWinCondition,
   buildSystemTextFromParts,
+  buildStrategyHints,
 } from "@/lib/prompt-utils";
 import { getI18n } from "@/i18n/translator";
 import {
@@ -142,8 +143,10 @@ export class VotePhase extends GamePhase {
     const dynamicContent = t("prompts.vote.task", {
       options: alivePlayers.map((p) => t("prompts.vote.option", { seat: p.seat + 1, name: p.displayName })).join(", "),
     });
+    const strategyHints = buildStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: strategyHints, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
     ];
     const system = buildSystemTextFromParts(systemParts);

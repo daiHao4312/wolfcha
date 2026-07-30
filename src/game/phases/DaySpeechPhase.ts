@@ -11,6 +11,7 @@ import {
   buildSystemTextFromParts,
   getDayStartIndex,
   buildFocusAngle,
+  buildStrategyHints,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -207,10 +208,12 @@ export class DaySpeechPhase extends GamePhase {
     const guidelinesSection = isGenshinMode
       ? t("prompts.daySpeech.guidelines.genshin")
       : t("prompts.daySpeech.guidelines.default");
+    const strategyHints = buildStrategyHints(player);
     const systemParts: SystemPromptPart[] = [
       { text: baseCacheable, cacheable: true, ttl: "1h" },
       { text: taskSection },
       ...(focusAngle ? [{ text: focusAngle }] : []),
+      { text: strategyHints, cacheable: true, ttl: "1h" },
       { text: guidelinesSection, cacheable: true, ttl: "1h" },
     ];
     const system = buildSystemTextFromParts(systemParts);

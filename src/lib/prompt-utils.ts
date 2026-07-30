@@ -259,6 +259,64 @@ export const buildPersonaSection = (player: Player, isGenshinMode: boolean = fal
   return `${base}${extraInfo}${hiddenCommunicationProfile}${hiddenPlayerMind}`;
 };
 
+/**
+ * 根据玩家角色构建白天发言/投票策略提示
+ * 整合专业狼人杀玩法知识，为不同角色提供差异化的策略指引
+ */
+export function buildStrategyHints(player: Player): string {
+  const { t } = getI18n();
+
+  // 狼人阵营：仅返回狼人策略
+  if (isWolfRole(player.role)) {
+    return `<strategy_hints>\n${t("prompts.strategyHints.wolf")}\n</strategy_hints>`;
+  }
+
+  // 好人阵营：通用策略 + 角色专属策略
+  const parts: string[] = [t("prompts.strategyHints.goodPerson")];
+
+  switch (player.role) {
+    case "Seer":
+      parts.push(t("prompts.strategyHints.seer"));
+      break;
+    case "Witch":
+      parts.push(t("prompts.strategyHints.witch"));
+      break;
+    case "Guard":
+      parts.push(t("prompts.strategyHints.guard"));
+      break;
+    case "Hunter":
+      parts.push(t("prompts.strategyHints.hunter"));
+      break;
+    default:
+      parts.push(t("prompts.strategyHints.villager"));
+      break;
+  }
+
+  return `<strategy_hints>\n${parts.join("\n")}\n</strategy_hints>`;
+}
+
+/**
+ * 根据玩家角色构建夜间行动策略提示（精简版，仅角色专属）
+ */
+export function buildNightStrategyHints(player: Player): string {
+  const { t } = getI18n();
+
+  if (isWolfRole(player.role)) {
+    return t("prompts.strategyHints.nightWolf");
+  }
+
+  switch (player.role) {
+    case "Seer":
+      return t("prompts.strategyHints.nightSeer");
+    case "Witch":
+      return t("prompts.strategyHints.nightWitch");
+    case "Guard":
+      return t("prompts.strategyHints.nightGuard");
+    default:
+      return "";
+  }
+}
+
 export const buildAliveCountsSection = (state: GameState): string => {
   const { t } = getI18n();
   const alive = state.players.filter((p) => p.alive);

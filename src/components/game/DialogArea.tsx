@@ -515,7 +515,7 @@ export function DialogArea({
   const stablePortraitPlayer = portraitPlayer || lastPortraitPlayerRef.current;
 
   const portraitNode = (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       {(() => {
         // 夜晚行动阶段：显示对应职业立绘
         const phaseRole = getPhaseRole(phase, humanPlayer?.role);
@@ -1154,7 +1154,7 @@ export function DialogArea({
       </div>
 
       {/* 下方：对话框 - 固定在底部 */}
-      <div className="wc-dialog-bottom mt-auto shrink-0 px-4 lg:px-6 pb-4 lg:pb-6 pt-0">
+      <div className="wc-dialog-bottom mt-auto shrink-0 px-4 lg:px-6 pb-4 lg:pb-6 pt-0 relative z-20">
         {/* 投票进度 */}
         {(gameState.phase === "DAY_VOTE" || gameState.phase === "DAY_BADGE_ELECTION") && (
           <div className="mb-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3">
@@ -1176,7 +1176,7 @@ export function DialogArea({
         {/* 对话气泡 - 简化结构，移除嵌套 */}
         <div
           className={cn(
-            "wc-panel wc-panel--strong rounded-xl p-5 relative transition-opacity min-h-[160px]",
+            "wc-panel wc-panel--strong rounded-xl p-5 relative transition-all duration-300 ease-in-out min-h-[160px]",
             shouldShowDialogPanel
               ? "opacity-100"
               : "opacity-0 pointer-events-none bg-transparent border-transparent shadow-none"
@@ -1202,7 +1202,7 @@ export function DialogArea({
             </div>
           )}
           {shouldShowDialogPanel && (
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
               {/* 游戏结束 - 文字形式 */}
               {showGameEnd && (
                 <motion.div
