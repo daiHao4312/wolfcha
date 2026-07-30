@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FingerprintSimple, Sparkle, Wrench, GearSix, GithubLogo, Star, DotsThreeOutlineVertical, Users, UsersFour } from "@phosphor-icons/react";
+import { FingerprintSimple, Sparkle, Wrench, GearSix, UsersFour } from "@phosphor-icons/react";
 import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +15,6 @@ import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { CustomCharacterModal } from "@/components/game/CustomCharacterModal";
 import { useCustomCharacters } from "@/hooks/useCustomCharacters";
 import { difficultyAtom, playerCountAtom, preferredRoleAtom } from "@/store/settings";
-import { useAppLocale } from "@/i18n/useAppLocale";
 
 const CUSTOM_CHARACTER_SELECTION_STORAGE_KEY = "wolfcha_custom_character_selection";
 
@@ -145,17 +144,12 @@ export function WelcomeScreen({
   onAutoAdvanceDialogueEnabledChange,
 }: WelcomeScreenProps) {
   const t = useTranslations();
-  const { locale } = useAppLocale();
-  const discordInviteUrl = "https://discord.gg/ETkdZWgy";
 
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const sealButtonRef = useRef<HTMLButtonElement | null>(null);
   const isStartingRef = useRef(false);
-  const [isGroupOpen, setIsGroupOpen] = useState(false);
-  const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCustomCharacterOpen, setIsCustomCharacterOpen] = useState(false);
 
   // 自定义角色选择存储键（固定值，不再依赖用户）
@@ -183,11 +177,6 @@ export function WelcomeScreen({
   const [difficulty, setDifficulty] = useAtom(difficultyAtom);
   const [playerCount, setPlayerCount] = useAtom(playerCountAtom);
   const [preferredRole, setPreferredRole] = useAtom(preferredRoleAtom);
-  const [githubStars, setGithubStars] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (locale === "en") setIsGroupOpen(false);
-  }, [locale]);
 
   useEffect(() => {
     selectionStorageKeyRef.current = selectionStorageKey;
@@ -248,20 +237,6 @@ export function WelcomeScreen({
     setFixedRoles(buildDefaultRoles(playerCount));
   }, [playerCount]);
 
-  // 获取 GitHub star 数
-  useEffect(() => {
-    fetch('https://api.github.com/repos/oil-oil/wolfcha')
-      .then(res => res.json())
-      .then(data => {
-        if (data.stargazers_count !== undefined) {
-          setGithubStars(data.stargazers_count);
-        }
-      })
-      .catch(() => {
-        // 静默失败，stars 保持 null
-      });
-  }, []);
-
   const roleConfigValid = useMemo(() => {
     if (fixedRoles.length !== playerCount) return false;
     if (fixedRoles.some((r) => !r)) return false;
@@ -310,8 +285,6 @@ export function WelcomeScreen({
 
   const isAnyModalOpen =
     isSetupOpen ||
-    isGroupOpen ||
-    isMobileMenuOpen ||
     isCustomCharacterOpen ||
     isDevConsoleOpen;
 
@@ -467,27 +440,6 @@ export function WelcomeScreen({
     await startGame();
   };
 
-  const handleOpenGroup = () => {
-    if (locale === "en") {
-      if (typeof window !== "undefined") {
-        window.open(discordInviteUrl, "_blank", "noopener,noreferrer");
-      }
-      return;
-    }
-    setIsGroupOpen(true);
-  };
-
-  const groupIcon =
-    locale === "en" ? (
-      <img
-        src="/Discord-Symbol-Blurple.svg"
-        alt="Discord"
-        className="h-4 w-4"
-      />
-    ) : (
-      <Users size={16} />
-    );
-
   return (
     <>
       <div className="wc-contract-screen selection:bg-[var(--color-accent)] selection:text-white">
@@ -528,101 +480,9 @@ export function WelcomeScreen({
           onDeleteCharacter={customCharacters.deleteCharacter}
         />
 
-        <Dialog
-          open={locale === "en" ? false : isGroupOpen}
-          onOpenChange={(open) => {
-            if (locale === "en") return;
-            setIsGroupOpen(open);
-          }}
-        >
-          <DialogContent className="max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Users size={18} weight="duotone" />
-                {t("welcome.group.title")}
-              </DialogTitle>
-              <DialogDescription>{t("welcome.group.description")}</DialogDescription>
-            </DialogHeader>
-
-            <div className="mt-2 flex items-center justify-center">
-              {groupImgOk !== false && (
-                <img
-                  src="/group.png"
-                  alt={t("settings.about.group.alt")}
-                  className="w-full max-w-[280px] max-h-[50vh] rounded-md border-2 border-[var(--border-color)] bg-white object-contain"
-                  onLoad={() => setGroupImgOk(true)}
-                  onError={() => setGroupImgOk(false)}
-                />
-              )}
-              {groupImgOk === false && (
-                <div className="text-xs text-[var(--text-muted)]">{t("settings.about.group.missing")}</div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <DialogContent className="max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle>{t("welcome.mobileMenu.title")}</DialogTitle>
-              <DialogDescription>{t("welcome.mobileMenu.description")}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="justify-start"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsSetupOpen(true);
-                }}
-              >
-                <GearSix size={16} />
-                {t("welcome.settings")}
-              </Button>
-              <Button asChild variant="outline" className="justify-start">
-                <a
-                  href="https://github.com/oil-oil/wolfcha"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <GithubLogo size={16} />
-                  {t("welcome.github.title")}
-                </a>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
         <div className="wc-welcome-actions absolute top-5 right-5 z-20 flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
             <LocaleSwitcher className="shrink-0" />
-            <a
-              href="https://github.com/oil-oil/wolfcha"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
-              title="View on GitHub"
-            >
-              <GithubLogo size={15} className="group-hover:scale-110 transition-transform" />
-              <span className="hidden lg:inline">GitHub</span>
-              <span className="flex items-center gap-1 text-[var(--color-gold)]">
-                <Star size={12} weight="fill" className="group-hover:scale-110 transition-transform" />
-                <span className="font-serif text-xs font-bold tabular-nums tracking-tight" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-                  {githubStars !== null ? githubStars.toLocaleString() : '···'}
-                </span>
-              </span>
-            </a>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleOpenGroup}
-              className="h-8 text-xs gap-2"
-            >
-              {groupIcon}
-              {t("welcome.group.title")}
-            </Button>
             <Button
               type="button"
               variant="outline"
@@ -639,20 +499,11 @@ export function WelcomeScreen({
             <Button
               type="button"
               variant="outline"
-              onClick={handleOpenGroup}
+              onClick={() => setIsSetupOpen(true)}
               className="h-8 text-xs gap-2"
             >
-              {groupIcon}
-              {t("welcome.group.short")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="h-8 w-8 px-0"
-              aria-label={t("welcome.mobileMenu.more")}
-            >
-              <DotsThreeOutlineVertical size={18} />
+              <GearSix size={16} />
+              {t("welcome.settings")}
             </Button>
           </div>
         </div>
