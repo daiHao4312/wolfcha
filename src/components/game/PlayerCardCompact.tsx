@@ -290,9 +290,9 @@ export function PlayerCardCompact({
         </div>
       )}
 
-      {/* 自己的身份图标 */}
+      {/* 自己的身份图标 - 放在头像左上角 */}
       {isMe && !isDead && isReady && showRoleBadge && (
-        <div className="absolute bottom-0 right-0 px-1.5 py-0.5 rounded-sm flex items-center justify-center z-10 bg-[var(--color-gold)] shadow-sm translate-x-1 translate-y-1 text-[10px] font-bold text-[var(--bg-dark)]">
+        <div className="wc-role-badge absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-sm flex items-center justify-center z-20 bg-[var(--color-gold)] shadow-sm text-[10px] font-bold text-[var(--bg-dark)]">
           {getRoleLabel(player.role)}
         </div>
       )}
@@ -329,7 +329,7 @@ export function PlayerCardCompact({
               )}
             </AnimatePresence>
             {isMe && isReady && (
-              <span className="text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">
+              <span className="wc-you-badge text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">
                 {t("common.you")}
               </span>
             )}
@@ -343,7 +343,7 @@ export function PlayerCardCompact({
                 !isReady && "opacity-50"
               )}>{player.seat + 1}</span>
               {isMe && isReady && (
-                <span className="text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">
+                <span className="wc-you-badge text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">
                   {t("common.you")}
                 </span>
               )}

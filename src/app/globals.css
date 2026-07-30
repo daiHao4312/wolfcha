@@ -2205,12 +2205,38 @@ input[type="submit"]:not(:disabled),
   padding: 1px 4px;
 }
 
-/* Mobile role badge at bottom */
-.wc-player-card--mobile [class*="absolute"][class*="bottom-0"] {
-  bottom: -2px;
-  right: -2px;
+/* Mobile role badge - 放在头像左上角，与其他徽章错开 */
+.wc-player-card--mobile .wc-role-badge {
+  top: 2px;
+  left: 2px;
+  right: auto;
+  bottom: auto;
   font-size: 8px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  max-width: 48px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile "you" badge - 深色背景与角色标签区分 */
+.wc-player-card--mobile .wc-you-badge {
+  font-size: 9px;
   padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+/* Mobile name area spacing */
+.wc-player-card--mobile .wc-player-card__name {
+  gap: 4px;
 }
 
 .wc-vote-result-card {
