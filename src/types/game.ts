@@ -275,6 +275,7 @@ export const MODEL_IDS = {
   },
   dashscope: {
     deepseek: "deepseek-v3.2",
+    qwenFlash: "qwen3.7-flash",
   },
   tokendance: {
     minimaxM27: "minimax-m2.7",
@@ -288,18 +289,18 @@ export const MODEL_IDS = {
 } as const;
 
 const BUILTIN_DEEPSEEK_V4_PRO_MODEL: ModelRef = {
-  provider: "tokendance",
-  model: MODEL_IDS.tokendance.deepseekV4Pro,
+  provider: "dashscope",
+  model: MODEL_IDS.dashscope.qwenFlash,
   reasoning: { enabled: false },
 };
 
 export const DEFAULT_MODEL_CONFIG = {
-  generator: MODEL_IDS.zenmux.geminiFlashLite,
-  summary: MODEL_IDS.tokendance.deepseekV4Pro,
-  review: MODEL_IDS.tokendance.deepseekV4Pro,
+  generator: MODEL_IDS.dashscope.qwenFlash,
+  summary: MODEL_IDS.dashscope.qwenFlash,
+  review: MODEL_IDS.dashscope.qwenFlash,
   validation: {
     zenmux: MODEL_IDS.zenmux.geminiFlashLite,
-    dashscope: MODEL_IDS.dashscope.deepseek,
+    dashscope: MODEL_IDS.dashscope.qwenFlash,
     tokendance: MODEL_IDS.tokendance.minimaxM27,
   },
 } as const;

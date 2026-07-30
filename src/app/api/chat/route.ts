@@ -8,7 +8,8 @@ import { Agent, setGlobalDispatcher } from "undici";
 setGlobalDispatcher(new Agent({ connectTimeout: 60_000 }));
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
-const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+// 百炼端点：默认走标准兼容网关，也可通过 DASHSCOPE_BASE_URL 指向专属部署端点
+const DASHSCOPE_API_BASE_URL = (process.env.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/+$/, "");
 const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completions`;
 
 // API 调用超时时间（毫秒）
@@ -382,6 +383,8 @@ async function runBatchItem(
       model: normalizedModel,
       messages: dashscopeMessages,
       temperature: cappedTemperature,
+      // 百炼 Qwen 系列默认开启思考会拖慢响应并占满 token，这里显式关闭
+      enable_thinking: false,
     };
 
     if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {
@@ -703,6 +706,8 @@ export async function POST(request: NextRequest) {
         model: normalizedModel,
         messages: dashscopeMessages,
         temperature: cappedTemperature,
+        // 百炼 Qwen 系列默认开启思考会拖慢响应并占满 token，这里显式关闭
+        enable_thinking: false,
       };
 
       if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {

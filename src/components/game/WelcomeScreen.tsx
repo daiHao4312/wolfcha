@@ -738,14 +738,14 @@ export function WelcomeScreen({
 
             <div className="mt-4 flex flex-col items-center gap-3">
               <div className="wc-seal-hint">
-                {canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
+                {mounted && canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
               </div>
               <button
                 ref={sealButtonRef}
                 type="button"
                 className="wc-wax-seal"
                 onClick={handleConfirm}
-                disabled={!canConfirm}
+                disabled={mounted && !canConfirm}
               >
                 <FingerprintSimple weight="fill" size={44} className="wc-wax-seal-icon" />
               </button>
