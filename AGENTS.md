@@ -18,11 +18,8 @@ pnpm lint         # Run ESLint
 Copy `.env.example` to `.env.local` and fill in:
 - `ZENMUX_API_KEY` — primary AI provider (ZenMux unified LLM gateway)
 - `MINIMAX_API_KEY` / `MINIMAX_GROUP_ID` — TTS voice synthesis
-- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — auth & database
-- `DASHSCOPE_API_KEY` — Alibaba Cloud model support
-- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` — payments
-- `NEXT_PUBLIC_WATCHA_CLIENT_ID` / `WATCHA_CLIENT_SECRET` — optional OAuth
-- `NEWAPI_API_KEY` / `NEWAPI_BASE_URL` — optional custom model endpoint
+- `DASHSCOPE_API_KEY` - Alibaba Cloud model support
+- `NEWAPI_API_KEY` / `NEWAPI_BASE_URL` - optional custom model endpoint
 
 ## Architecture Overview
 

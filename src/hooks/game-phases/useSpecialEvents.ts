@@ -17,14 +17,12 @@ import { DELAY_CONFIG, getRoleName } from "@/lib/game-constants";
 import { delay, type FlowToken } from "@/lib/game-flow-controller";
 import { playNarrator } from "@/lib/narrator-audio-player";
 import { gameStatsTracker } from "@/hooks/useGameStats";
-import { gameSessionTracker } from "@/lib/game-session-tracker";
 
 export interface SpecialEventsCallbacks {
   setDialogue: (speaker: string, text: string, isStreaming?: boolean) => void;
   setIsWaitingForAI: (waiting: boolean) => void;
   waitForUnpause: () => Promise<void>;
   isTokenValid: (token: FlowToken) => boolean;
-  getAccessToken: () => string | null;
   prepareFinalState?: (state: GameState) => Promise<GameState>;
 }
 
@@ -53,7 +51,7 @@ export function useSpecialEvents(
   };
   const [, setGameState] = useAtom(gameStateAtom);
 
-  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid, getAccessToken, prepareFinalState } = callbacks;
+  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid, prepareFinalState } = callbacks;
 
   /** 游戏结束 */
   const endGame = useCallback(async (state: GameState, winner: Alignment) => {
@@ -81,12 +79,6 @@ export function useSpecialEvents(
     setDialogue(texts.speakerHost, winner === "village" ? texts.t("specialEvents.villageWinLine") : texts.t("specialEvents.wolfWinLine"), false);
 
     setGameState(currentState);
-
-    // 更新游戏会话数据（前端直接调用 Supabase）
-    const winnerType = winner === "village" ? "villager" : "wolf";
-    gameSessionTracker.end(winnerType, true).catch((err) => {
-      console.error("[game-session] Failed to end:", err);
-    });
 
     // 播放游戏结束语音
     await playNarrator(winner === "village" ? "villageWin" : "wolfWin");
@@ -256,9 +248,6 @@ export function useSpecialEvents(
     currentState = addSystemMessage(currentState, texts.systemMessages.dayBreak);
     setGameState(currentState);
     setDialogue(texts.speakerHost, texts.systemMessages.dayBreak, false);
-
-    // 天亮时同步游戏进度到数据库
-    gameSessionTracker.syncProgress().catch(() => {});
 
     // 播放旁白语音
     await playNarrator("dayBreak");

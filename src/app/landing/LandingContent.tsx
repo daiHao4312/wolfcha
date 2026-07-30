@@ -507,8 +507,8 @@ export function LandingContent() {
     {
       q: isZh ? "如何查看我的游戏数据？" : "How do I view my game data?",
       a: isZh
-        ? "点击头像进入个人中心，可以查看积分、邀请码、已邀请人数等信息。也可以配置自己的 API Key。"
-        : "Click your avatar to access the profile center, where you can view credits, referral code, and referral count. You can also configure custom API keys to use more models.",
+        ? "点击设置按钮可以配置自己的 API Key，支持 ZenMux、百炼、TokenDance 等多种模型供应商。"
+        : "Click the settings button to configure your own API keys, supporting multiple model providers like ZenMux, DashScope, and TokenDance.",
     },
     {
       q: isZh ? "支持哪些语言？" : "What languages are supported?",

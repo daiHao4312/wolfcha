@@ -27,7 +27,6 @@ export interface StartGameOptions {
   devPreset?: DevPreset;
   difficulty?: DifficultyLevel;
   playerCount?: number;
-  gameSessionId?: string;
   isGenshinMode?: boolean;
   isSpectatorMode?: boolean;
   customCharacters?: CustomCharacterData[];

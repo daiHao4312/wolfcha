@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, hasAuthorizedActiveGameSession } from "@/lib/api-auth";
 import { ALL_MODELS, PROJECT_MODELS } from "@/types/game";
 import { TOKENDANCE_BASE_URL } from "@/lib/api-keys";
 import { Agent, setGlobalDispatcher } from "undici";
@@ -574,26 +573,6 @@ async function runBatchItem(
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await authenticateRequest(request as unknown as Request);
-  if ("error" in auth) return auth.error;
-
-  const earlyZenmuxKey = request.headers.get("x-zenmux-api-key")?.trim();
-  const earlyDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
-  const earlyTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim();
-  const hasCustomKeys = Boolean(
-    (earlyZenmuxKey ?? "") ||
-    (earlyDashscopeKey ?? "") ||
-    (earlyTokendanceKey ?? "")
-  );
-
-  if (!hasCustomKeys) {
-    const sessionId = request.headers.get("x-game-session-id")?.trim() || null;
-    const hasAuthorizedSession = await hasAuthorizedActiveGameSession(auth.user.id, sessionId);
-    if (!hasAuthorizedSession) {
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 403 });
-    }
-  }
-
   try {
     const body = await request.json();
     if (Array.isArray(body?.requests)) {

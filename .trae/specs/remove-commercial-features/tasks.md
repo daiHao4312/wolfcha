@@ -1,0 +1,115 @@
+# 任务列表
+
+## 任务顺序
+
+- [x] Task 1: 清理 package.json 依赖
+  - 删除 `stripe`、`@supabase/supabase-js`、`@supabase/ssr` 依赖
+  - 确认 `@types/stripe` 等不再需要
+- [x] Task 2: 删除所有商业 API 路由
+  - 删除 `/src/app/api/stripe/` 整个目录
+  - 删除 `/src/app/api/credits/` 整个目录
+  - 删除 `/src/app/api/sponsor/` 整个目录
+  - 删除 `/src/app/api/game-sessions/` 整个目录
+  - 删除 `/src/app/api/guest/` 整个目录
+  - 删除 `/src/app/api/auth/` 整个目录
+- [x] Task 3: 删除 Supabase 和数据库相关文件
+  - 删除 `src/lib/supabase.ts`、`src/lib/supabase-admin.ts`
+  - 删除 `src/types/database.ts`
+- [x] Task 4: 删除 Demo 模式相关文件
+  - 删除 `src/lib/demo-config.ts`、`src/lib/demo-config-server.ts`
+  - 删除 `src/lib/demo-mode.ts`
+  - 删除 `src/lib/auth-headers.ts`、`src/lib/auth-errors.ts`、`src/lib/watcha-oauth.ts`
+- [x] Task 5: 删除福利/活动配置
+  - 删除 `src/lib/welfare-config.ts`
+  - 删除 `src/lib/spring-campaign.ts`
+  - 删除 `src/lib/referral.ts`
+- [x] Task 6: 删除 API 鉴权模块
+  - 删除 `src/lib/api-auth.ts`
+  - 删除 `src/lib/game-session-tracker.ts`
+- [x] Task 7: 删除商业 UI 组件
+  - 删除 `src/components/game/AuthModal.tsx`
+  - 删除 `src/components/game/AccountModal.tsx`
+  - 删除 `src/components/game/ResetPasswordModal.tsx`
+  - 删除 `src/components/game/UserProfileModal.tsx`
+  - 删除 `src/components/game/LowCreditModal.tsx`
+  - 删除 `src/components/game/SharePanel.tsx`
+- [x] Task 8: 删除 `useCredits` hook
+  - 删除 `src/hooks/useCredits.ts`
+- [x] Task 9: 改造 `useCustomCharacters` 为 localStorage 存储
+  - 移除 Supabase 依赖，改用 localStorage 的 CRUD
+  - 保持接口不变（createCharacter / updateCharacter / deleteCharacter / fetchCharacters）
+- [x] Task 10: 改造 `/api/chat` 路由
+  - 移除 `authenticateRequest` 调用
+  - 移除 `hasAuthorizedActiveGameSession` 积分检查
+  - 保留服务端 fallback API Key 作为可选配置
+- [x] Task 11: 改造 `/api/tts` 路由
+  - 移除鉴权检查
+  - 确保 TTS 请求透传用户 Key
+- [x] Task 12: 改造 `/api/vote-batch` 路由
+  - 移除鉴权检查
+  - 确保请求透传用户 Key
+- [x] Task 13: 精简 WelcomeScreen 组件
+  - 移除 sponsor 卡片、赞助商弹窗
+  - 移除春季活动弹窗、签到弹窗
+  - 移除用户头像/积分/Key 状态栏
+  - 移除 Auth/Account/UserProfile/LowCredit/SharePanel 弹窗引用
+  - 移除 `useCredits` 依赖
+  - 简化 `handleConfirm`：去掉积分检和鉴权，直接开始游戏
+  - 保留：名字输入、设置、自定义角色、DevTools、GitHub 链接、群组链接
+- [x] Task 14: 改造首页 `page.tsx`
+  - 移除 `referral` 引用
+  - 移除用户状态相关逻辑
+- [x] Task 15: 清理 `useGameLogic` 中的商业逻辑
+  - 移除 `gameSessionId` 追踪
+  - 移除 supabase auth 逻辑
+  - 移除 beforeunload 会话保存
+- [x] Task 16: 清理 `game-machine.ts` 中 gameSessionId 状态
+  - 确认无需修改（文件中无 gameSessionId 引用）
+- [x] Task 17: 清理 i18n 翻译文件中的商业文案
+  - 移除 `zh.json` 和 `en.json` 中 sponsor、credits、springCampaign、referral、dailyBonus、redeem 等键
+- [x] Task 18: 清理 App 全局样式
+  - 去除 sponsor card 相关 CSS 类（约 400 行）
+  - 去除 promo tag 相关 CSS
+- [x] Task 19: 清理 `types/game.ts` 中的商业相关字段
+  - 移除 `StartGameOptions` 中 `gameSessionId` 字段
+- [x] Task 20: 清理 `types/custom-character.ts` 中的 Supabase 依赖
+  - 将 `user_id` 改为可选字段
+- [x] Task 21: 简化 `src/lib/api-keys.ts`
+  - 简化 `isCustomKeyEnabled` 为直接检查是否有 Key
+  - `validateApiKeyBalance` 改为纯本地检查
+- [x] Task 22: 清理 `src/lib/audio-manager.ts` 中 session 相关逻辑
+  - 移除 `gameSessionTracker` 和 `auth-headers` 引用
+- [x] Task 23: 清理 `src/lib/llm.ts` 中 session 相关逻辑
+  - 移除 `gameSessionTracker` 和 `auth-headers` 引用
+- [x] Task 24: 检查 features 页面
+  - features 页面无需修改（"No credit card" 是正面描述）
+- [x] 额外: 清理 `.env.example`、`AGENTS.md`、`CLAUDE.md` 中的商业环境变量
+- [x] 额外: 修复 `LandingContent.tsx` FAQ 文案
+- [x] 额外: 清理 `useSpecialEvents.ts` 中的 gameSessionTracker 引用
+
+## 任务依赖关系
+
+- [Task 1] 无依赖
+- [Task 2] 无依赖
+- [Task 3] 无依赖
+- [Task 4] 无依赖
+- [Task 5] 无依赖
+- [Task 6] 无依赖
+- [Task 7] 无依赖
+- [Task 8] 无依赖
+- [Task 9] 依赖 [Task 3]（移除 Supabase）
+- [Task 10] 依赖 [Task 6]（移除 api-auth）
+- [Task 11] 依赖 [Task 6]
+- [Task 12] 依赖 [Task 6]
+- [Task 13] 依赖 [Task 7]、[Task 8]、[Task 5]
+- [Task 14] 依赖 [Task 8]、[Task 3]
+- [Task 15] 依赖 [Task 8]
+- [Task 16] 依赖 [Task 8]
+- [Task 17] 依赖 [Task 7]、[Task 13]
+- [Task 18] 依赖 [Task 13]
+- [Task 19] 无依赖
+- [Task 20] 无依赖
+- [Task 21] 无依赖
+- [Task 22] 依赖 [Task 15]
+- [Task 23] 依赖 [Task 15]
+- [Task 24] 无依赖

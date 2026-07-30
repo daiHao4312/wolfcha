@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, hasAuthorizedActiveGameSession } from "@/lib/api-auth";
 import type { IncomingHttpHeaders } from "node:http";
 import * as https from "node:https";
 import { URL } from "node:url";
@@ -14,23 +13,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req as unknown as Request);
-  if ("error" in auth) return auth.error;
-
   const headerApiKey = req.headers.get("x-minimax-api-key")?.trim();
   const headerGroupId = req.headers.get("x-minimax-group-id")?.trim();
   const hasCustomTtsKey = Boolean(headerApiKey || headerGroupId);
 
   if (hasCustomTtsKey && (!headerApiKey || !headerGroupId)) {
     return NextResponse.json({ error: "MiniMax API key and group ID are both required" }, { status: 400 });
-  }
-
-  if (!hasCustomTtsKey) {
-    const sessionId = req.headers.get("x-game-session-id")?.trim() || null;
-    const hasAuthorizedSession = await hasAuthorizedActiveGameSession(auth.user.id, sessionId);
-    if (!hasAuthorizedSession) {
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 403 });
-    }
   }
 
   try {

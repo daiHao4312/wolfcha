@@ -2,7 +2,7 @@ import type { Gender } from "@/lib/character-generator";
 
 export interface CustomCharacter {
   id: string;
-  user_id: string;
+  user_id?: string;
   display_name: string;
   gender: Gender;
   age: number;

@@ -7,8 +7,6 @@ import {
 } from "@/lib/api-keys";
 import { ALL_MODELS, AVAILABLE_MODELS, PROJECT_MODELS, type ModelRef } from "@/types/game";
 import { gameStatsTracker } from "@/hooks/useGameStats";
-import { gameSessionTracker } from "@/lib/game-session-tracker";
-import { getAuthHeaders } from "@/lib/auth-headers";
 import { parseLLMJson } from "./llm-json";
 
 export type LLMContentPart =
@@ -525,13 +523,6 @@ function parseJsonTolerant<T>(raw: string): T {
   }
 }
 
-function attachGameSessionHeader(headers: Record<string, string>) {
-  const sessionId = gameSessionTracker.getSessionId();
-  if (sessionId) {
-    headers["X-Game-Session-Id"] = sessionId;
-  }
-}
-
 export async function generateCompletion(
   options: GenerateOptions
 ): Promise<{ content: string; reasoning_details?: unknown; raw: ChatCompletionResponse }> {
@@ -548,9 +539,6 @@ export async function generateCompletion(
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
   };
-
-  Object.assign(headers, await getAuthHeaders());
-  attachGameSessionHeader(headers);
 
   console.log("[LLM] generateCompletion:", {
     customEnabled,
@@ -617,12 +605,6 @@ export async function generateCompletion(
     promptTokens: result.usage?.prompt_tokens,
     completionTokens: result.usage?.completion_tokens,
   });
-  gameSessionTracker.addAiCall({
-    inputChars,
-    outputChars: assistantMessage.content.length,
-    promptTokens: result.usage?.prompt_tokens,
-    completionTokens: result.usage?.completion_tokens,
-  });
 
   return {
     content: stripReasoningArtifacts(assistantMessage.content),
@@ -644,9 +626,6 @@ export async function generateCompletionBatch(
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
   };
-
-  Object.assign(headers, await getAuthHeaders());
-  attachGameSessionHeader(headers);
 
   const response = await fetchWithRetry(
     "/api/chat",
@@ -705,9 +684,6 @@ export async function* generateCompletionStream(
     "Content-Type": "application/json",
     ...buildCustomKeyHeaders(customEnabled),
   };
-
-  Object.assign(headers, await getAuthHeaders());
-  attachGameSessionHeader(headers);
 
   const response = await fetchWithRetry(
     "/api/chat",
@@ -810,10 +786,6 @@ export async function* generateCompletionStream(
 
   // 流式结束后统计 AI 调用
   gameStatsTracker.addAiCall({
-    inputChars,
-    outputChars: totalOutputChars,
-  });
-  gameSessionTracker.addAiCall({
     inputChars,
     outputChars: totalOutputChars,
   });

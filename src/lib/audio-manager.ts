@@ -1,6 +1,4 @@
 import { getMinimaxApiKey, getMinimaxGroupId, isCustomKeyEnabled } from "@/lib/api-keys";
-import { getAuthHeaders } from "@/lib/auth-headers";
-import { gameSessionTracker } from "@/lib/game-session-tracker";
 
 export interface AudioTask {
   id: string; // unique message id
@@ -34,12 +32,6 @@ class AudioManager {
 
   private async buildTtsHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    const authHeaders = await getAuthHeaders();
-    Object.assign(headers, authHeaders);
-    const sessionId = gameSessionTracker.getSessionId();
-    if (sessionId) {
-      headers["X-Game-Session-Id"] = sessionId;
-    }
     if (isCustomKeyEnabled()) {
       const apiKey = getMinimaxApiKey();
       const groupId = getMinimaxGroupId();

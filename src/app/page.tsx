@@ -58,7 +58,6 @@ import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
 import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
 import { useTutorial } from "@/hooks/useTutorial";
-import { persistReferralFromCurrentUrl, removeReferralFromCurrentUrl } from "@/lib/referral";
 import { useRouter, useParams } from "next/navigation";
 import { useGameAnalysis } from "@/hooks/useGameAnalysis";
 
@@ -202,11 +201,6 @@ export default function Home() {
   useEffect(() => {
     visualIsNightRef.current = visualIsNight;
   }, [visualIsNight]);
-
-  useEffect(() => {
-    persistReferralFromCurrentUrl();
-    removeReferralFromCurrentUrl();
-  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 768px)");

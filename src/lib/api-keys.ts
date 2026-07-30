@@ -163,13 +163,8 @@ function resolveModelForCurrentKeyState(
 }
 
 export function isCustomKeyEnabled(): boolean {
-  if (!canUseStorage()) return false;
-  const flagEnabled = window.localStorage.getItem(CUSTOM_KEY_ENABLED_STORAGE) === "true";
-  if (!flagEnabled) return false;
-  // 额外安全检查：即使标志位为 true，如果没有任何有效的 LLM API key，也返回 false
-  // 这可以防止用户开启了开关但没有正确配置 key 的情况
-  const hasAnyLLMKey = hasZenmuxKey() || hasDashscopeKey() || hasTokendanceKey();
-  return hasAnyLLMKey;
+  // 所有用户必须自带 Key，只要有任意 LLM API key 配置即视为启用
+  return hasZenmuxKey() || hasDashscopeKey() || hasTokendanceKey();
 }
 
 export function setCustomKeyEnabled(value: boolean) {
@@ -290,56 +285,9 @@ export interface KeyValidationResult {
 }
 
 export async function validateApiKeyBalance(): Promise<KeyValidationResult> {
+  // 本地检查：是否有任意 Key 配置（不再调用远程验证接口）
   if (!isCustomKeyEnabled()) {
-    return { valid: true };
-  }
-
-  const zenmuxKey = getZenmuxApiKey();
-  const dashscopeKey = getDashscopeApiKey();
-  const tokendanceKey = getTokendanceApiKey();
-  const tokendanceBaseUrl = getTokendanceBaseUrl();
-  if (!zenmuxKey && !dashscopeKey && !tokendanceKey) {
     return { valid: false, error: "未配置任何 API Key", errorCode: "no_key" };
   }
-
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (zenmuxKey) {
-      headers["X-Zenmux-Api-Key"] = zenmuxKey;
-    }
-    if (dashscopeKey) {
-      headers["X-Dashscope-Api-Key"] = dashscopeKey;
-    }
-    if (tokendanceKey) {
-      headers["X-Tokendance-Api-Key"] = tokendanceKey;
-    }
-    if (tokendanceBaseUrl) {
-      headers["X-Tokendance-Base-Url"] = tokendanceBaseUrl;
-    }
-
-    const response = await fetch("/api/validate-key", {
-      method: "POST",
-      headers,
-    });
-
-    const data = await response.json();
-
-    if (data.valid) {
-      return { valid: true };
-    }
-
-    return {
-      valid: false,
-      error: data.error || "API Key 验证失败",
-      errorCode: data.errorCode || "unknown",
-    };
-  } catch (error) {
-    return {
-      valid: false,
-      error: `验证请求失败: ${String(error)}`,
-      errorCode: "network_error",
-    };
-  }
+  return { valid: true };
 }
