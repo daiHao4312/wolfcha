@@ -7,6 +7,11 @@ import { LLMJSONParser } from "ai-json-fixer";
 
 const parser = new LLMJSONParser();
 
+/** 清理段落内部的换行符和多余空白 */
+function cleanSegment(text: string): string {
+  return text.replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
+}
+
 export interface StreamingSpeechParserOptions {
   onSegmentReceived?: (segment: string, index: number) => void;
   onProgress?: (current: number) => void;
@@ -178,7 +183,7 @@ export class StreamingSpeechParser {
 
               const parsed = JSON.parse('"' + currentString + '"');
               if (typeof parsed === "string") {
-                const cleaned = parsed.trim();
+                const cleaned = cleanSegment(parsed);
                 // 过滤掉常见的 JSON 键名，只保留实际内容
                 const commonKeys = new Set(["message", "content", "text", "value", "speech", "speaker", "role", "type", "index", "id"]);
                 const reservedKeys = new Set(["analysis", "judgment", "judgement", "observation", "reasoning", "thought"]);
@@ -265,7 +270,7 @@ export class StreamingSpeechParser {
         for (const item of parsed) {
           if (typeof item === "string") {
             // 情况1: ["话1", "话2"] - 字符串数组
-            const cleaned = item.trim();
+            const cleaned = cleanSegment(item);
             if (cleaned) segments.push(cleaned);
           } else if (item && typeof item === "object") {
             // 情况2: [{"speaker": "...", "message": "..."}] - 对象数组
@@ -273,7 +278,7 @@ export class StreamingSpeechParser {
             const obj = item as Record<string, unknown>;
             const text = obj.content || obj.message || obj.text || obj.value || obj.speech;
             if (typeof text === "string") {
-              const cleaned = text.trim();
+              const cleaned = cleanSegment(text);
               if (cleaned) segments.push(cleaned);
             }
           }
@@ -286,12 +291,12 @@ export class StreamingSpeechParser {
         const segments: string[] = [];
         for (const value of Object.values(parsed)) {
           if (typeof value === "string") {
-            const cleaned = value.trim();
+            const cleaned = cleanSegment(value);
             if (cleaned) segments.push(cleaned);
           } else if (Array.isArray(value)) {
             for (const item of value) {
               if (typeof item === "string") {
-                const cleaned = item.trim();
+                const cleaned = cleanSegment(item);
                 if (cleaned) segments.push(cleaned);
               }
             }
@@ -348,7 +353,7 @@ export class StreamingSpeechParser {
             } else {
               inString = false;
               // 完成一个字符串
-              const cleaned = currentString.trim();
+              const cleaned = cleanSegment(currentString);
               if (cleaned && cleaned.length > 1) {
                 segments.push(cleaned);
               }

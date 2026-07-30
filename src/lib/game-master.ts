@@ -58,6 +58,102 @@ function sanitizeModelArtifacts(text: string): string {
     .trim();
 }
 
+/** 单个消息气泡的最大字符数，超过则拆分 */
+const MAX_SEGMENT_LENGTH = 100;
+
+/**
+ * 清理单个发言段落：移除内部换行符、合并多余空白
+ * 解决 AI 返回的字符串内部包含 \n 导致 UI 显示异常换行的问题
+ */
+function sanitizeSpeechSegment(segment: string): string {
+  return segment
+    .replace(/[\r\n]+/g, " ")   // 换行符替换为空格
+    .replace(/\s{2,}/g, " ")    // 多个连续空白合并为一个
+    .trim();
+}
+
+/**
+ * 对过长的段落进行二次拆分
+ * 依次按句号/感叹号/问号/分号、再按逗号/顿号尝试分割
+ * 保留标点符号在前一段末尾
+ */
+function splitLongSegment(segment: string, maxLength: number): string[] {
+  if (segment.length <= maxLength) return [segment];
+
+  // 第一轮：按句末标点（。！？；）分割，保留标点
+  const splitBySentencePunct = (text: string): string[] => {
+    const parts: string[] = [];
+    let buffer = "";
+    for (let i = 0; i < text.length; i++) {
+      buffer += text[i];
+      if (/[。！？；!?;]/.test(text[i])) {
+        parts.push(buffer);
+        buffer = "";
+      }
+    }
+    if (buffer.trim()) parts.push(buffer);
+    return parts;
+  };
+
+  const sentenceParts = splitBySentencePunct(segment);
+  if (sentenceParts.every((p) => p.length <= maxLength)) {
+    return sentenceParts.filter((p) => p.trim().length > 0);
+  }
+
+  // 第二轮：对仍超长的段落按逗号/顿号再分，并尽量合并到接近 maxLength
+  const result: string[] = [];
+  for (const part of sentenceParts) {
+    if (part.length <= maxLength) {
+      if (part.trim()) result.push(part);
+      continue;
+    }
+    // 按逗号/顿号分割，保留标点
+    const subParts: string[] = [];
+    let subBuffer = "";
+    for (let i = 0; i < part.length; i++) {
+      subBuffer += part[i];
+      if (/[，、,]/.test(part[i])) {
+        subParts.push(subBuffer);
+        subBuffer = "";
+      }
+    }
+    if (subBuffer.trim()) subParts.push(subBuffer);
+
+    // 贪心合并：尽量凑满 maxLength
+    let merged = "";
+    for (const sp of subParts) {
+      if (merged && (merged + sp).length > maxLength) {
+        result.push(merged);
+        merged = sp;
+      } else {
+        merged += sp;
+      }
+    }
+    if (merged.trim()) result.push(merged);
+  }
+
+  return result.filter((p) => p.trim().length > 0);
+}
+
+/**
+ * 对解析出的发言段落做统一后处理
+ * 1. 清理换行符和多余空白
+ * 2. 对过长段落进行二次拆分
+ * 3. 过滤空段落
+ */
+function postProcessSegments(segments: string[], maxLength = MAX_SEGMENT_LENGTH): string[] {
+  const result: string[] = [];
+  for (const seg of segments) {
+    const cleaned = sanitizeSpeechSegment(seg);
+    if (!cleaned) continue;
+    for (const s of splitLongSegment(cleaned, maxLength)) {
+      const trimmed = s.trim();
+      if (trimmed.length > 0) result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 function sanitizeSeatMentions(text: string, players: Player[]): string {
   if (!text) return text;
   const totalSeats = players.length;
@@ -918,28 +1014,30 @@ export async function generateAISpeechSegments(
           }
 
           if (normalized.length > 0) {
-            return normalized;
+            return postProcessSegments(normalized);
           }
         }
       }
     } catch {
-      // JSON解析失败，按换行分割
+      // JSON解析失败，继续尝试其他方法
     }
 
     const objectExtracted = extractObjectSegments(sanitizedSpeech);
-    if (objectExtracted.length > 0) return objectExtracted;
+    if (objectExtracted.length > 0) return postProcessSegments(objectExtracted);
 
     const extracted = extractQuotedSegments(sanitizedSpeech)
       .map((s) => s.trim().replace(/^['"]+|['"]+$/g, ""))
       .filter((s) => s.length > 0);
-    if (extracted.length > 0) return extracted;
+    if (extracted.length > 0) return postProcessSegments(extracted);
 
-    // 降级处理：按换行或句号分割
-    const fallbackSegments = sanitizedSpeech
-      .replace(/[\[\]]/g, "")  // 只移除方括号，保留引号
-      .split(/[。！？]+(?=\s|$)|\n+/)  // 按句号、感叹号、问号（后面跟空格或结尾）或换行分割
-      .map(s => s.trim().replace(/^["']+|["']+$/g, ""))  // 移除首尾引号
-      .filter(s => s.length > 2);  // 过滤掉长度小于等于2的片段
+    // 降级处理：按句末标点或换行分割（修复：去掉 lookahead，中文句号后通常不跟空格）
+    const fallbackSegments = postProcessSegments(
+      sanitizedSpeech
+        .replace(/[\[\]]/g, "")  // 只移除方括号，保留引号
+        .split(/[。！？；!?;]+|\n+/)  // 按句末标点或换行分割
+        .map((s) => s.trim().replace(/^["']+|["']+$/g, ""))  // 移除首尾引号
+        .filter((s) => s.length > 2)  // 过滤掉过短的片段
+    );
 
     if (fallbackSegments.length > 0) return fallbackSegments;
 
@@ -949,7 +1047,7 @@ export async function generateAISpeechSegments(
       .replace(/^["']+|["']+$/g, "")
       .trim();
 
-    return cleanedSingle.length > 0 ? [cleanedSingle] : ["（……）"];
+    return cleanedSingle.length > 0 ? postProcessSegments([cleanedSingle]) : ["（……）"];
   } catch (error) {
     await aiLogger.log({
       type: "speech",
@@ -999,9 +1097,14 @@ export async function generateAISpeechSegmentsStream(
   const parser = new StreamingSpeechParser({
     onSegmentReceived: (segment, index) => {
       const sanitized = sanitizeSeatMentions(sanitizeModelArtifacts(segment), state.players);
-      if (sanitized && !emittedSegments.has(sanitized)) {
-        emittedSegments.add(sanitized);
-        options.onSegmentReceived?.(sanitized, emittedCount++);
+      if (!sanitized) return;
+      // 清理换行并对过长段落进行二次拆分
+      const processed = postProcessSegments([sanitized]);
+      for (const sub of processed) {
+        if (!emittedSegments.has(sub)) {
+          emittedSegments.add(sub);
+          options.onSegmentReceived?.(sub, emittedCount++);
+        }
       }
     },
     onProgress: options.onProgress,
@@ -1064,15 +1167,16 @@ export async function generateAISpeechSegmentsStream(
             }
 
             if (normalized.length > 0) {
-              // 通知回退解析的结果（只发射未发射过的）
-              normalized.forEach((seg) => {
+              // 后处理：清理换行、拆分过长段落
+              const processed = postProcessSegments(normalized);
+              processed.forEach((seg) => {
                 if (!emittedSegments.has(seg)) {
                   emittedSegments.add(seg);
                   options.onSegmentReceived?.(seg, emittedCount++);
                 }
               });
-              options.onComplete?.(normalized);
-              return normalized;
+              options.onComplete?.(processed);
+              return processed;
             }
           }
         } catch {
@@ -1080,12 +1184,14 @@ export async function generateAISpeechSegmentsStream(
         }
       }
 
-      // 降级处理：按换行或句号分割
-      const fallbackSegments = sanitizedSpeech
-        .replace(/[\[\]]/g, "")
-        .split(/[。！？]+(?=\s|$)|\n+/)
-        .map((s) => s.trim().replace(/^["']+|["']+$/g, ""))
-        .filter((s) => s.length > 2);
+      // 降级处理：按句末标点或换行分割（修复：去掉 lookahead）
+      const fallbackSegments = postProcessSegments(
+        sanitizedSpeech
+          .replace(/[\[\]]/g, "")
+          .split(/[。！？；!?;]+|\n+/)
+          .map((s) => s.trim().replace(/^["']+|["']+$/g, ""))
+          .filter((s) => s.length > 2)
+      );
 
       if (fallbackSegments.length > 0) {
         fallbackSegments.forEach((seg) => {
@@ -1104,7 +1210,7 @@ export async function generateAISpeechSegmentsStream(
         .replace(/^["']+|["']+$/g, "")
         .trim();
 
-      const result = cleanedSingle.length > 0 ? [cleanedSingle] : ["（……）"];
+      const result = cleanedSingle.length > 0 ? postProcessSegments([cleanedSingle]) : ["（……）"];
       result.forEach((seg) => {
         if (!emittedSegments.has(seg)) {
           emittedSegments.add(seg);
@@ -1122,9 +1228,9 @@ export async function generateAISpeechSegmentsStream(
       return emittedList;
     }
 
-    // Sanitize all segments
-    const sanitizedSegments = segments.map((s) =>
-      sanitizeSeatMentions(sanitizeModelArtifacts(s), state.players)
+    // Sanitize all segments and apply post-processing (clean newlines, split long segments)
+    const sanitizedSegments = postProcessSegments(
+      segments.map((s) => sanitizeSeatMentions(sanitizeModelArtifacts(s), state.players))
     );
 
     await aiLogger.log({

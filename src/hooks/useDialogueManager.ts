@@ -66,7 +66,10 @@ export function useDialogueManager() {
     player: Player,
     afterSpeech?: (s: unknown) => Promise<void>
   ) => {
-    const normalizedSegments = segments.map((s) => s.trim()).filter((s) => s.length > 0);
+    // 清理换行符和多余空白，防止 UI 显示异常换行
+    const normalizedSegments = segments
+      .map((s) => s.replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim())
+      .filter((s) => s.length > 0);
     speechQueueRef.current = {
       segments: normalizedSegments,
       currentIndex: 0,
@@ -181,7 +184,8 @@ export function useDialogueManager() {
     const queue = speechQueueRef.current;
     if (!queue) return;
 
-    const trimmed = segment.trim();
+    // 清理换行符和多余空白
+    const trimmed = segment.replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
     if (!trimmed) return;
 
     // Deduplication: prevent adding the same segment twice
