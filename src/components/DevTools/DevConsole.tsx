@@ -2016,7 +2016,7 @@ export function DevModeButton({ onClick }: { onClick: () => void }) {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-[99] flex flex-col gap-2">
+    <div className="fixed bottom-24 right-5 z-[99] flex flex-col gap-2">
       <button
         onClick={handleTestAnalysis}
         className="w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 shadow-lg flex items-center justify-center transition-all hover:scale-110"
