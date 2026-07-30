@@ -443,6 +443,85 @@ function normalizeGeneratedCharacterForProfile(char: unknown, profile: BaseProfi
   };
 }
 
+/**
+ * 将解析出的原始角色对象规整、校验并拼装为最终角色。
+ * 供流式实时落位与结束后回退补齐复用，避免逻辑重复。
+ */
+const finalizeCharacterForProfile = (
+  rawChar: unknown,
+  profile: BaseProfile
+): GeneratedCharacter | null => {
+  const normalizedCharacter = normalizeGeneratedCharacterForProfile(rawChar, profile);
+  if (
+    !normalizedCharacter ||
+    !isValidPersonaForProfile(normalizedCharacter.persona, profile) ||
+    !isValidPlayerMind(normalizedCharacter.playerMind)
+  ) {
+    return null;
+  }
+
+  const voiceId = resolveVoiceId(
+    normalizedCharacter.persona.voiceId,
+    normalizedCharacter.persona.gender,
+    normalizedCharacter.persona.age,
+    "zh" as AppLocale
+  );
+
+  return {
+    displayName: profile.displayName,
+    persona: {
+      ...normalizedCharacter.persona,
+      basicInfo: profile.basicInfo,
+      voiceId,
+      relationships: undefined,
+    },
+    playerMind: normalizedCharacter.playerMind,
+  };
+};
+
+/**
+ * 从可能被截断或夹杂噪声的文本中，提取所有括号平衡且疑似完整的角色 JSON 片段。
+ * 采用字符串感知的括号栈扫描，比正则更能容忍嵌套与残缺输出。
+ */
+function extractCharacterObjectTexts(text: string): string[] {
+  const results: string[] = [];
+  const braceStack: number[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+
+    // 处于字符串内部：仅需正确跳过转义字符与结束引号
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      braceStack.push(i);
+    } else if (ch === "}") {
+      const start = braceStack.pop();
+      if (start === undefined) continue;
+      const slice = text.slice(start, i + 1);
+      // 仅保留同时含三大关键字段的对象，过滤掉 persona/playerMind 等子对象
+      if (
+        slice.includes('"displayName"') &&
+        slice.includes('"persona"') &&
+        slice.includes('"playerMind"')
+      ) {
+        results.push(slice);
+      }
+    }
+  }
+
+  return results;
+}
+
 const alignCharactersToProfiles = (
   chars: unknown,
   profiles: BaseProfile[]
@@ -578,74 +657,67 @@ export async function generateCharacters(
 
     for await (const chunk of stream) {
       accumulatedContent += chunk;
-      
-      // 使用正则提取完整的角色对象
-      // 匹配 {"displayName": "...", "persona": {...}, "playerMind": {...}} 结构
+
+      // 用括号平衡扫描提取已完整的角色对象（比正则更能容忍嵌套与残缺）
       const cleaned = stripMarkdownCodeFences(accumulatedContent);
-      
-      // 找到所有可能完整的角色对象
-      // 通过匹配 displayName 后跟 persona 和 playerMind 对象的闭合 } 来识别完整角色
-      const characterPattern = /\{\s*"displayName"\s*:\s*"[^"]+"\s*,\s*"persona"\s*:\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*,\s*"playerMind"\s*:\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*\}/g;
-      const matches = cleaned.match(characterPattern);
-      
-      if (matches) {
-        for (const match of matches) {
-          try {
-            const c = parseLLMJson<GeneratedCharacter>(match);
-            if (!c) continue;
-            if (!c.displayName) continue;
-            
-            // 找到对应的 profile index
-            const profileIndex = baseProfiles.findIndex(p => 
-              p.displayName === c.displayName && !emittedIndices.has(baseProfiles.indexOf(p))
-            );
-            
-            if (profileIndex === -1) continue;
-            
-            const profile = baseProfiles[profileIndex];
-            const normalizedCharacter = normalizeGeneratedCharacterForProfile(c, profile);
+      const matches = extractCharacterObjectTexts(cleaned);
 
-            if (normalizedCharacter && isValidPersonaForProfile(normalizedCharacter.persona, profile) && isValidPlayerMind(normalizedCharacter.playerMind)) {
-              emittedIndices.add(profileIndex);
+      for (const match of matches) {
+        try {
+          const c = parseLLMJson<GeneratedCharacter>(match);
+          if (!c || !c.displayName) continue;
 
-              const voiceId = resolveVoiceId(
-                normalizedCharacter.persona.voiceId,
-                normalizedCharacter.persona.gender,
-                normalizedCharacter.persona.age,
-                "zh" as AppLocale
-              );
+          // 找到对应且尚未落位的 profile
+          const profileIndex = baseProfiles.findIndex(
+            (p, idx) => p.displayName === c.displayName && !emittedIndices.has(idx)
+          );
+          if (profileIndex === -1) continue;
 
-              const character: GeneratedCharacter = {
-                displayName: profile.displayName,
-                persona: {
-                  ...normalizedCharacter.persona,
-                  basicInfo: profile.basicInfo,
-                  voiceId,
-                  relationships: undefined,
-                },
-                playerMind: normalizedCharacter.playerMind,
-              };
+          const character = finalizeCharacterForProfile(c, baseProfiles[profileIndex]);
+          if (!character) continue;
 
-              finalizedCharacters[profileIndex] = character;
-              options?.onCharacter?.(profileIndex, character);
-              console.log(`[character-gen] emitted character ${profileIndex}: ${character.displayName}`);
-            }
-          } catch {
-            // 解析失败是正常的
-          }
+          emittedIndices.add(profileIndex);
+          finalizedCharacters[profileIndex] = character;
+          options?.onCharacter?.(profileIndex, character);
+          console.log(`[character-gen] emitted character ${profileIndex}: ${character.displayName}`);
+        } catch {
+          // 解析失败是正常的（片段可能尚未闭合）
         }
       }
     }
 
     // 流式结束后，检查是否所有角色都已生成
     if (finalizedCharacters.filter(Boolean).length < baseProfiles.length) {
-      // 回退到完整解析
+      const cleaned = stripMarkdownCodeFences(accumulatedContent);
+
+      // 回退步骤 1：尽力从（可能截断的）整段内容里逐个补齐缺失角色
+      const fallbackMatches = extractCharacterObjectTexts(cleaned);
+      for (const match of fallbackMatches) {
+        const c = parseLLMJson<GeneratedCharacter>(match);
+        if (!c || !c.displayName) continue;
+
+        const profileIndex = baseProfiles.findIndex(
+          (p, idx) => p.displayName === c.displayName && !emittedIndices.has(idx)
+        );
+        if (profileIndex === -1) continue;
+
+        const character = finalizeCharacterForProfile(c, baseProfiles[profileIndex]);
+        if (!character) continue;
+
+        emittedIndices.add(profileIndex);
+        finalizedCharacters[profileIndex] = character;
+        options?.onCharacter?.(profileIndex, character);
+      }
+    }
+
+    // 回退步骤 2：若仍有缺失，再尝试对整体结构做一次完整解析补齐
+    if (finalizedCharacters.filter(Boolean).length < baseProfiles.length) {
       const cleaned = stripMarkdownCodeFences(accumulatedContent);
       const fullResult = parseLLMJson<unknown>(cleaned);
       if (!fullResult) {
         throw new Error("Character generation returned invalid JSON");
       }
-      
+
       const normalized = normalizeGeneratedCharacters(fullResult);
       const alignedCharacters = alignCharactersToProfiles(normalized.characters, baseProfiles);
 
@@ -656,26 +728,9 @@ export async function generateCharacters(
       // 补充未生成的角色
       for (let i = 0; i < alignedCharacters.length; i++) {
         if (finalizedCharacters[i]) continue;
-        
-        const c = alignedCharacters[i];
-        const profile = baseProfiles[i];
-        const voiceId = resolveVoiceId(
-          c.persona.voiceId,
-          c.persona.gender,
-          c.persona.age,
-          "zh" as AppLocale
-        );
 
-        const character: GeneratedCharacter = {
-          displayName: profile.displayName,
-          persona: {
-            ...c.persona,
-            basicInfo: profile.basicInfo, // Carry over basicInfo from BaseProfile
-            voiceId,
-            relationships: undefined,
-          },
-          playerMind: c.playerMind,
-        };
+        const character = finalizeCharacterForProfile(alignedCharacters[i], baseProfiles[i]);
+        if (!character) continue;
 
         finalizedCharacters[i] = character;
         options?.onCharacter?.(i, character);

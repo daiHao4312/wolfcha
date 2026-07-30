@@ -6,9 +6,17 @@
  * - 嘴型共 30 个变量 (variant01 - variant30)
  */
 
+import { createAvatar } from "@dicebear/core";
+import { notionists } from "@dicebear/collection";
+import type { Options as NotionistsOptions } from "@dicebear/notionists";
 import type { ModelRef } from "@/types/game";
 import type { Gender } from "./character-generator";
 import { getModelLogoPath } from "./model-logo";
+
+// DiceBear Notionists 各部件的字面量类型（用于类型安全地传参）
+type NotionistsEyes = NonNullable<NotionistsOptions["eyes"]>[number];
+type NotionistsHair = NonNullable<NotionistsOptions["hair"]>[number];
+type NotionistsLips = NonNullable<NotionistsOptions["lips"]>[number];
 
 // ============================================
 // 发型配置 (Hair)
@@ -186,45 +194,29 @@ export function buildAvatarUrl(options: AvatarUrlOptions): string {
     backgroundColor,
   } = options;
 
-  const params = new URLSearchParams();
-  params.set("seed", seed);
+  // 解析背景色：transparent -> 空数组（透明），否则单色数组
+  const resolvedBg = backgroundColor ?? getAvatarBgColor(seed);
+  const bgColors = resolvedBg === "transparent" ? [] : [resolvedBg];
 
-  // 背景色
-  if (backgroundColor) {
-    params.set("backgroundColor", backgroundColor);
-  } else {
-    params.set("backgroundColor", getAvatarBgColor(seed));
-  }
+  // 发型：显式指定优先，否则按性别取稳定发型
+  const resolvedHair = hair ?? (gender ? getHairForSeed(seed, gender) : undefined);
 
-  // 缩放和位移
-  if (scale !== 100) {
-    params.set("scale", String(scale));
-  }
-  if (translateY !== 0) {
-    params.set("translateY", String(translateY));
-  }
-
-  // 发型 - 如果提供了 gender，则根据性别选择
-  if (hair) {
-    params.set("hair", hair);
-  } else if (gender) {
-    params.set("hair", getHairForSeed(seed, gender));
-  }
-
+  // 眼睛：显式指定优先，否则按 seed 取稳定眼型
   const resolvedEyes = eyes ?? getDayEyesForSeed(seed);
-  params.set("eyes", resolvedEyes);
 
-  // 嘴型
-  if (lips) {
-    params.set("lips", lips);
-  }
+  // 本地生成 DiceBear Notionists 头像 SVG（无外部网络请求）
+  const avatar = createAvatar(notionists, {
+    seed,
+    backgroundColor: bgColors,
+    scale,
+    translateY,
+    eyes: [resolvedEyes as NotionistsEyes],
+    beardProbability: 0, // 防止出现胡子
+    ...(resolvedHair ? { hair: [resolvedHair as NotionistsHair] } : {}),
+    ...(lips ? { lips: [lips as NotionistsLips] } : {}),
+  });
 
-  // 胡子概率 - 女性角色设置为 0 防止出现胡子
- 
-  params.set("beardProbability", "0");
-  
-
-  return `https://api.dicebear.com/7.x/notionists/svg?${params.toString()}`;
+  return avatar.toDataUriSync();
 }
 
 /**

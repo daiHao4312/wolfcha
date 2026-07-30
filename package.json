@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@dicebear/collection": "^7.2.0",
+    "@dicebear/core": "^7.2.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
