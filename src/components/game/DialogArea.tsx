@@ -512,9 +512,9 @@ export function DialogArea({
     if (portraitPlayer) lastPortraitPlayerRef.current = portraitPlayer;
   }, [portraitPlayer?.playerId]);
 
-  // 投票阶段不保留上一个发言者的立绘，避免立绘残留
-  const isVotingPhase = phase === "DAY_BADGE_ELECTION" || phase === "DAY_VOTE";
-  const stablePortraitPlayer = isVotingPhase ? portraitPlayer : (portraitPlayer || lastPortraitPlayerRef.current);
+  // 仅在发言阶段保留上一个发言者的立绘（防止切换发言者时闪烁），其他阶段不保留
+  const isSpeechPhase = phase === "DAY_SPEECH" || phase === "DAY_BADGE_SPEECH" || phase === "DAY_PK_SPEECH" || phase === "DAY_LAST_WORDS";
+  const stablePortraitPlayer = isSpeechPhase ? (portraitPlayer || lastPortraitPlayerRef.current) : portraitPlayer;
 
   const portraitNode = (
     <AnimatePresence mode="popLayout" initial={false}>

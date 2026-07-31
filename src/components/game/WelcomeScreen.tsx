@@ -591,11 +591,13 @@ export function WelcomeScreen({
 
             <div className="mt-4 flex flex-col items-center gap-3">
               <div className="wc-seal-hint">
-                {mounted && canConfirm
-                  ? t("welcome.sealHint.ready")
-                  : !isLlmConfigured() || !getLlmTested()
-                    ? t("welcome.sealHint.configureLlm")
-                    : t("welcome.sealHint.waiting")}
+                {!mounted
+                  ? t("welcome.sealHint.configureLlm")
+                  : canConfirm
+                    ? t("welcome.sealHint.ready")
+                    : !isLlmConfigured() || !getLlmTested()
+                      ? t("welcome.sealHint.configureLlm")
+                      : t("welcome.sealHint.waiting")}
               </div>
               <button
                 ref={sealButtonRef}

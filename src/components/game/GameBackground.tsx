@@ -44,16 +44,16 @@ export function GameBackground({ isNight, isBlinking = false }: GameBackgroundPr
 
   const fadeDuration = isBlinking ? 0 : 1.5;
 
-  // 服务端 / 首次客户端渲染：纯静态 div，opacity 与 animate 目标值一致
+  // 服务端 / 首次客户端渲染：纯静态 div，固定显示白天背景（不依赖 isNight，避免 SSR 水合不匹配）
   if (!mounted) {
     return (
       <div className="fixed inset-0 -z-10 overflow-hidden">
         {/* 白天背景 */}
-        <div className="absolute inset-0" style={{ ...dayStyle, opacity: isNight ? 0 : 1 }}>
+        <div className="absolute inset-0" style={{ ...dayStyle, opacity: 1 }}>
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-day-from)]/80 via-[var(--bg-day-via)]/80 to-[var(--bg-day-to)]/80 mix-blend-overlay" />
         </div>
         {/* 夜晚背景 */}
-        <div className="absolute inset-0" style={{ ...nightStyle, opacity: isNight ? 1 : 0 }} />
+        <div className="absolute inset-0" style={{ ...nightStyle, opacity: 0 }} />
       </div>
     );
   }
