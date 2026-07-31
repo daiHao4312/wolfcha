@@ -5,6 +5,9 @@ import { soloLandingKeys } from "@/components/seo/landing/soloLandingData";
 import { experienceLandingKeys } from "@/components/seo/landing/experienceLandingData";
 import { gameComparisonKeys } from "@/components/seo/landing/gameComparisonData";
 
+// 运行时读取环境变量,确保每次请求都能拿到最新的 SITE_URL
+export const dynamic = "force-dynamic";
+
 // Guide pages for SEO (18 individual guides + index)
 const guidePages = [
   "", // guides index

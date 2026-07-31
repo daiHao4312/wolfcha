@@ -6,7 +6,7 @@ import { Crown, Scroll } from "lucide-react";
 import type { GameAnalysisData } from "@/types/analysis";
 import { ROLE_NAMES } from "./constants";
 import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
-import { SITE_DOMAIN, SITE_URL } from "@/lib/site-config";
+import { getClientSiteDomain, getClientSiteUrl } from "@/lib/site-config";
 
 export type PosterMode = "radar" | "portrait";
 
@@ -307,11 +307,11 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         <div className="px-4 py-4 bg-[#0a0908] border-t border-[#c5a059]/10 mt-auto">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[#c5a059] font-bold tracking-wider text-sm">{SITE_DOMAIN}</div>
+              <div className="text-[#c5a059] font-bold tracking-wider text-sm">{getClientSiteDomain()}</div>
               <div className="text-[9px] text-white/40 mt-0.5">扫码加入猹杀</div>
             </div>
             <div className="bg-white p-1.5 rounded">
-              <QRCodeSVG value={SITE_URL} size={52} level="M" bgColor="#ffffff" fgColor="#1a1614" />
+              <QRCodeSVG value={getClientSiteUrl()} size={52} level="M" bgColor="#ffffff" fgColor="#1a1614" />
             </div>
           </div>
         </div>

@@ -28,13 +28,6 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-# 构建时注入公共环境变量(NEXT_PUBLIC_ 前缀变量在构建时被替换到客户端代码)
-# 通过 docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com 传入
-ARG NEXT_PUBLIC_SITE_URL
-ARG NEXT_PUBLIC_GA_ID
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
-
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
