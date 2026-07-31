@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { LandingHero } from "@/components/seo/landing/LandingHero";
 import { LandingSection } from "@/components/seo/landing/LandingSection";
@@ -11,17 +12,17 @@ export const metadata: Metadata = {
   description:
     "Explore classic Werewolf (Mafia) roles in Wolfcha: Seer, Witch, Hunter, Guard, and Werewolf. Each role page includes strategy tips, AI dialogue examples, and an instant Play CTA.",
   alternates: {
-    canonical: "https://wolf-cha.com/roles",
+    canonical: `${SITE_URL}/roles`,
   },
   openGraph: {
     title: "Werewolf Roles — Wolfcha",
     description:
       "Role guides for Seer, Witch, Hunter, Guard, and Werewolf — with solo vs AI strategy and dialogue examples.",
-    url: "https://wolf-cha.com/roles",
+    url: `${SITE_URL}/roles`,
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",

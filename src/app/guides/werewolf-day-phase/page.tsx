@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -23,15 +24,15 @@ export const metadata: Metadata = {
     "social deduction tips",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/werewolf-day-phase",
+    canonical: `${SITE_URL}/guides/werewolf-day-phase`,
   },
   openGraph: {
     title: "Werewolf Day Phase Guide: Discussion & Voting Strategy | Wolfcha",
     description:
       "Complete guide to the Werewolf day phase - discussion tactics, voting strategies, sheriff elections, and how to identify wolves.",
-    url: "https://wolf-cha.com/guides/werewolf-day-phase",
+    url: `${SITE_URL}/guides/werewolf-day-phase`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Day Phase Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Day Phase Guide" }],
   },
 };
 
@@ -40,12 +41,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Werewolf Day Phase Guide: Discussion, Voting & Strategy",
   description: "Complete guide to the Werewolf day phase including discussion strategies, voting tactics, and behavioral analysis.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: SITE_OG_IMAGE,
+  author: { "@type": "Organization", name: "Wolfcha", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: SITE_LOGO } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/werewolf-day-phase" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/guides/werewolf-day-phase` },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [

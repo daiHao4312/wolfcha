@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -16,17 +17,17 @@ export const metadata: Metadata = {
   description:
     "Explore Wolfcha features: solo Werewolf gameplay, AI opponents that reason and bluff, immersive voice acting, classic roles, and instant browser-based play. No download required.",
   alternates: {
-    canonical: "https://wolf-cha.com/features",
+    canonical: `${SITE_URL}/features`,
   },
   openGraph: {
     title: "Wolfcha Features — AI Werewolf Game",
     description:
       "Solo play, AI opponents, voice acting, classic roles, and instant browser play — built for modern social deduction.",
-    url: "https://wolf-cha.com/features",
+    url: `${SITE_URL}/features`,
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",
@@ -216,7 +217,7 @@ function buildSoftwareJsonLd() {
     "@type": "SoftwareApplication",
     name: "Wolfcha - AI Werewolf Game",
     description: "A solo Werewolf (Mafia) social deduction game with AI opponents, voice acting, and classic roles.",
-    url: "https://wolf-cha.com/features",
+    url: `${SITE_URL}/features`,
     applicationCategory: "GameApplication",
     operatingSystem: "Any",
     offers: {

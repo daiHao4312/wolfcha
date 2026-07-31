@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import { notFound } from "next/navigation";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -54,7 +55,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const canonical = `https://wolf-cha.com/roles/${data.key}`;
+  const canonical = `${SITE_URL}/roles/${data.key}`;
   const title = `${data.roleName} Role Guide — AI Werewolf (Mafia) | Wolfcha`;
 
   return {
@@ -70,7 +71,7 @@ export async function generateMetadata({
       type: "article",
       images: [
         {
-          url: "https://wolf-cha.com/og-image.png",
+          url: SITE_OG_IMAGE,
           width: 1200,
           height: 630,
           alt: "Wolfcha - AI Werewolf Game",
@@ -92,7 +93,7 @@ export default async function RoleLandingPage({
     notFound();
   }
 
-  const canonical = `https://wolf-cha.com/roles/${data.key}`;
+  const canonical = `${SITE_URL}/roles/${data.key}`;
 
   const relatedHub = data.related.hub;
   const relatedCluster = data.related.cluster.filter((l) => l.href !== `/roles/${data.key}`);

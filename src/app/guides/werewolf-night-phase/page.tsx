@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -24,15 +25,15 @@ export const metadata: Metadata = {
     "werewolf kill",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/werewolf-night-phase",
+    canonical: `${SITE_URL}/guides/werewolf-night-phase`,
   },
   openGraph: {
     title: "Werewolf Night Phase Guide: Complete Action Order | Wolfcha",
     description:
       "Learn everything about the Werewolf night phase - action order, role abilities, and strategies for Guard, Werewolf, Witch, and Seer.",
-    url: "https://wolf-cha.com/guides/werewolf-night-phase",
+    url: `${SITE_URL}/guides/werewolf-night-phase`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Night Phase Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Night Phase Guide" }],
   },
 };
 
@@ -41,12 +42,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Werewolf Night Phase Guide: All Night Actions Explained",
   description: "Complete guide to the Werewolf night phase including action order, role abilities, and strategic decisions.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: SITE_OG_IMAGE,
+  author: { "@type": "Organization", name: "Wolfcha", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: SITE_LOGO } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/werewolf-night-phase" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/guides/werewolf-night-phase` },
 };
 
 const howToJsonLd = {

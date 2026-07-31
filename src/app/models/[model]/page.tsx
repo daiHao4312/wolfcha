@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -112,7 +113,7 @@ export async function generateMetadata({
   // Check if it's a comparison page
   const comparisonData = getModelComparisonData(model);
   if (comparisonData) {
-    const canonical = `https://wolf-cha.com/models/${comparisonData.key}`;
+    const canonical = `${SITE_URL}/models/${comparisonData.key}`;
     const title = `${comparisonData.modelA.name} vs ${comparisonData.modelB.name} — AI Werewolf Comparison | Wolfcha`;
     
     return {
@@ -130,7 +131,7 @@ export async function generateMetadata({
         type: "article",
         images: [
           {
-            url: "https://wolf-cha.com/og-image.png",
+            url: SITE_OG_IMAGE,
             width: 1200,
             height: 630,
             alt: "Wolfcha - AI Werewolf Game",
@@ -146,7 +147,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
+  const canonical = `${SITE_URL}/models/${data.key}`;
   const title = `${data.displayName} AI in Werewolf — Personality & Play Style | Wolfcha`;
 
   return {
@@ -166,7 +167,7 @@ export async function generateMetadata({
       type: "article",
       images: [
         {
-          url: "https://wolf-cha.com/og-image.png",
+          url: SITE_OG_IMAGE,
           width: 1200,
           height: 630,
           alt: "Wolfcha - AI Werewolf Game",
@@ -178,7 +179,7 @@ export async function generateMetadata({
 
 // Comparison Page Component
 function ModelComparisonPage({ data }: { data: NonNullable<ReturnType<typeof getModelComparisonData>> }) {
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
+  const canonical = `${SITE_URL}/models/${data.key}`;
   
   return (
     <MarketingPageWrapper>
@@ -354,7 +355,7 @@ function ModelComparisonPage({ data }: { data: NonNullable<ReturnType<typeof get
 
 // Single Model Page Component
 function SingleModelPage({ data }: { data: NonNullable<ReturnType<typeof getModelLandingData>> }) {
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
+  const canonical = `${SITE_URL}/models/${data.key}`;
   const relatedHub = data.related.hub;
   const relatedModels = data.related.models.filter((l) => l.href !== `/models/${data.key}`);
 

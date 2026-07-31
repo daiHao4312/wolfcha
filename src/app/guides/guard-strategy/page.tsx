@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: "Guard Strategy Guide: Protect the Village in Werewolf | Wolfcha",
   description: "Master the Guard role in Werewolf. Learn who to protect, prediction strategies, and avoid common mistakes.",
   keywords: ["werewolf guard strategy", "guard role werewolf", "who to protect werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/guard-strategy" },
+  alternates: { canonical: `${SITE_URL}/guides/guard-strategy` },
 };
 
 const faqItems = [

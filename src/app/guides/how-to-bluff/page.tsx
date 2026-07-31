@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "How to Bluff in Werewolf: Master the Art of Deception | Wolfcha",
   description: "Learn bluffing techniques in Werewolf. Master fake claims, misdirection, and psychological manipulation to survive as a wolf or deceive as a villager.",
   keywords: ["werewolf bluffing", "how to lie in mafia", "werewolf deception", "fake claim werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-bluff" },
+  alternates: { canonical: `${SITE_URL}/guides/how-to-bluff` },
 };
 
 const faqItems = [

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -24,15 +25,15 @@ export const metadata: Metadata = {
     "mafia cop strategy",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/seer-strategy",
+    canonical: `${SITE_URL}/guides/seer-strategy`,
   },
   openGraph: {
     title: "Seer Strategy Guide: Master the Most Powerful Village Role | Wolfcha",
     description:
       "Complete Seer strategy guide for Werewolf - who to check, when to reveal, and how to lead the village to victory.",
-    url: "https://wolf-cha.com/guides/seer-strategy",
+    url: `${SITE_URL}/guides/seer-strategy`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Seer Strategy Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Seer Strategy Guide" }],
   },
 };
 
@@ -41,12 +42,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Seer Strategy Guide: How to Play Seer in Werewolf",
   description: "Complete strategy guide for playing the Seer role in Werewolf, including check priorities, reveal timing, and information management.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: SITE_OG_IMAGE,
+  author: { "@type": "Organization", name: "Wolfcha", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: SITE_LOGO } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/seer-strategy" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/guides/seer-strategy` },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [

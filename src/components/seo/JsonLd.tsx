@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO, SITE_DOMAIN } from "@/lib/site-config";
 
 interface JsonLdProps {
   id?: string;
@@ -24,8 +25,8 @@ export function getGameJsonLd() {
     alternateName: ["AI Werewolf", "猹杀", "AI狼人杀"],
     description:
       "Play Werewolf with AI opponents. A single-player social deduction game where AI players reason, bluff, accuse, defend, and vote through the full Werewolf flow.",
-    url: "https://wolf-cha.com",
-    image: "https://wolf-cha.com/og-image.png",
+    url: SITE_URL,
+    image: SITE_OG_IMAGE,
     genre: ["Social Deduction", "Strategy", "Party Game", "AI Game"],
     gamePlatform: ["Web Browser", "Mobile Browser"],
     applicationCategory: "Game",
@@ -39,7 +40,7 @@ export function getGameJsonLd() {
     author: {
       "@type": "Organization",
       name: "Wolfcha Team",
-      url: "https://wolf-cha.com",
+      url: SITE_URL,
     },
     keywords:
       "AI werewolf, play werewolf online, werewolf game online, play werewolf alone, single player werewolf, AI mafia game, werewolf with AI opponents, social deduction game",
@@ -59,12 +60,12 @@ export function getWebsiteJsonLd() {
     "@type": "WebSite",
     name: "Wolfcha",
     alternateName: "AI Werewolf Game",
-    url: "https://wolf-cha.com",
+    url: SITE_URL,
     description:
       "Play Werewolf with AI opponents online. A single-player social deduction game with classic roles, AI dialogue, voting, bluffing, and optional voice acting.",
     potentialAction: {
       "@type": "PlayAction",
-      target: "https://wolf-cha.com",
+      target: SITE_URL,
       name: "Play AI Werewolf",
     },
   };
@@ -75,12 +76,12 @@ export function getOrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Wolfcha",
-    url: "https://wolf-cha.com",
-    logo: "https://wolf-cha.com/logo.png",
+    url: SITE_URL,
+    logo: SITE_LOGO,
     sameAs: ["https://github.com/oil-oil/wolfcha"],
     contactPoint: {
       "@type": "ContactPoint",
-      email: "contact@wolf-cha.com",
+      email: `contact@${SITE_DOMAIN}`,
       contactType: "customer support",
     },
   };
@@ -120,7 +121,7 @@ export function getFAQJsonLd() {
         name: "Is Wolfcha free to play?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, Wolfcha is free to play. You can start playing immediately by visiting wolf-cha.com.",
+          text: `Yes, Wolfcha is free to play. You can start playing immediately by visiting ${SITE_DOMAIN}.`,
         },
       },
       {
@@ -142,13 +143,13 @@ export function getHowToJsonLd() {
     name: "How to Play AI Werewolf",
     description:
       "Learn how to play Werewolf with AI opponents in this single-player social deduction game.",
-    image: "https://wolf-cha.com/og-image.png",
+    image: SITE_OG_IMAGE,
     totalTime: "PT15M",
     step: [
       {
         "@type": "HowToStep",
         name: "Enter Your Name",
-        text: "Visit wolf-cha.com and enter your player name to begin.",
+        text: `Visit ${SITE_DOMAIN} and enter your player name to begin.`,
         position: 1,
       },
       {

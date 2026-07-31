@@ -368,7 +368,7 @@
       "q3": "How do AI players work?",
       "a3": "Every AI player only sees information their role should know. They track speeches, react to votes, protect themselves, bluff when needed, and try to win with their faction.",
       "q4": "Is it free to play?",
-      "a4": "Yes, Wolfcha is free to play. Start immediately at wolf-cha.com.",
+      "a4": "Yes, Wolfcha is free to play. You can start playing immediately.",
       "q5": "What roles are available?",
       "a5": "Classic roles include Werewolf, Seer, Witch, Hunter, Guard, and Villager. Role composition varies by player count (8-12)."
     },

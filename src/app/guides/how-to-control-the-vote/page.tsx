@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "How to Control the Vote in Werewolf: Voting Strategy | Wolfcha",
   description: "Master voting strategy in Werewolf. Learn to lead votes, build consensus, counter wolf manipulation, and ensure the village eliminates the right target.",
   keywords: ["werewolf voting strategy", "control vote mafia", "werewolf vote manipulation", "lead werewolf vote"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-control-the-vote" },
+  alternates: { canonical: `${SITE_URL}/guides/how-to-control-the-vote` },
 };
 
 const faqItems = [

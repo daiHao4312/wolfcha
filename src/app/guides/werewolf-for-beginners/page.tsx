@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -14,13 +15,13 @@ export const metadata: Metadata = {
   description:
     "New to Werewolf? Learn the basics in 5 minutes with our beginner-friendly guide. Understand roles, phases, voting, and start playing immediately.",
   keywords: ["werewolf for beginners", "learn werewolf", "werewolf beginner guide", "how to play werewolf first time", "werewolf tutorial"],
-  alternates: { canonical: "https://wolf-cha.com/guides/werewolf-for-beginners" },
+  alternates: { canonical: `${SITE_URL}/guides/werewolf-for-beginners` },
   openGraph: {
     title: "Werewolf for Beginners: Start Playing in 5 Minutes | Wolfcha",
     description: "The simplest Werewolf guide for new players. Learn roles, phases, and basic strategy.",
-    url: "https://wolf-cha.com/guides/werewolf-for-beginners",
+    url: `${SITE_URL}/guides/werewolf-for-beginners`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Beginner Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Beginner Guide" }],
   },
 };
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -16,17 +17,17 @@ export const metadata: Metadata = {
   description:
     "Learn how to play Werewolf (Mafia) solo in Wolfcha. Complete rules guide: get a role, act at night, discuss by day, and vote — all against AI opponents in your browser. Perfect for beginners.",
   alternates: {
-    canonical: "https://wolf-cha.com/how-to-play",
+    canonical: `${SITE_URL}/how-to-play`,
   },
   openGraph: {
     title: "How to Play Werewolf with AI — Complete Guide | Wolfcha",
     description:
       "Learn how to play Werewolf (Mafia) solo against AI in your browser. Night actions, day discussion, voting, and winning strategies — simplified.",
-    url: "https://wolf-cha.com/how-to-play",
+    url: `${SITE_URL}/how-to-play`,
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",
@@ -225,7 +226,7 @@ function buildHowToJsonLd() {
     "@type": "HowTo",
     name: "How to Play Werewolf (Mafia) Solo with AI",
     description: "Learn how to play Werewolf solo against AI opponents in Wolfcha.",
-    url: "https://wolf-cha.com/how-to-play",
+    url: `${SITE_URL}/how-to-play`,
     step: gameFlow.map((s, idx) => ({
       "@type": "HowToStep",
       position: idx + 1,

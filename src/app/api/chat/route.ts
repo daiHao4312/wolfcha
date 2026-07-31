@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TOKENDANCE_BASE_URL } from "@/lib/api-keys";
+import { SITE_URL } from "@/lib/site-config";
 import { Agent, setGlobalDispatcher } from "undici";
 
 // 将 undici 底层 TCP 连接超时从默认 10s 调高到 60s
@@ -481,7 +482,7 @@ async function runBatchItem(
           Authorization: `Bearer ${tokendanceApiKey}`,
           "Content-Type": "application/json",
           "X-App-Name": "Wolfcha",
-          "X-Site-URL": "https://wolf-cha.com",
+          "X-Site-URL": SITE_URL,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -839,7 +840,7 @@ export async function POST(request: NextRequest) {
             Authorization: `Bearer ${tokendanceApiKey}`,
             "Content-Type": "application/json",
             "X-App-Name": "Wolfcha",
-            "X-Site-URL": "https://wolf-cha.com",
+            "X-Site-URL": SITE_URL,
           },
           body: JSON.stringify(requestBody),
           signal: controller.signal,

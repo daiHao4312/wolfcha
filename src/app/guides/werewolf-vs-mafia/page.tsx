@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "Werewolf vs Mafia: What's the Difference? Complete Comparison | Wolfcha",
   description: "Compare Werewolf and Mafia party games. Learn the differences in rules, roles, themes, and gameplay. Understand which version is right for you.",
   keywords: ["werewolf vs mafia", "mafia vs werewolf", "werewolf mafia difference", "mafia game comparison"],
-  alternates: { canonical: "https://wolf-cha.com/guides/werewolf-vs-mafia" },
+  alternates: { canonical: `${SITE_URL}/guides/werewolf-vs-mafia` },
 };
 
 const faqItems = [

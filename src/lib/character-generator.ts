@@ -578,10 +578,12 @@ export async function generateCharacters(
     const baseProfiles = normalizedBase.profiles;
 
     if (!isValidBaseProfiles(baseProfiles, count)) {
+      // 类型 guard 否定分支会将 BaseProfile[] 收窄为 never,需重新断言为 unknown
+      const raw = baseProfiles as unknown;
       // 记录具体验证失败原因，方便排查
-      const reason = !Array.isArray(baseProfiles) ? "not array"
-        : baseProfiles.length !== count ? `count mismatch: got ${baseProfiles.length}, expected ${count}`
-        : baseProfiles.map((p, i) => {
+      const reason = !Array.isArray(raw) ? "not array"
+        : raw.length !== count ? `count mismatch: got ${raw.length}, expected ${count}`
+        : raw.map((p: unknown, i: number) => {
             if (!isRecord(p)) return `[${i}] not object`;
             const issues: string[] = [];
             if (typeof p.displayName !== "string" || !p.displayName.trim()) issues.push("bad displayName");

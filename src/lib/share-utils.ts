@@ -3,6 +3,7 @@
  */
 
 import type { GameAnalysisData } from "@/types/analysis";
+import { SITE_DOMAIN } from "@/lib/site-config";
 
 export interface ShareOptions {
   title?: string;
@@ -673,7 +674,7 @@ export function generateAnalysisHTML(data: GameAnalysisData): string {
     ` : ""}
 
     <footer class="footer">
-      <div class="footer-link">wolf-cha.com</div>
+      <div class="footer-link">${SITE_DOMAIN}</div>
       <div class="footer-note">AI 狼人杀 · 随时开局</div>
     </footer>
   </div>

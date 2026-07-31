@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "How to Build Trust in Werewolf: Establish Credibility | Wolfcha",
   description: "Learn to build trust and establish credibility in Werewolf. Master techniques for creating alliances, proving your alignment, and becoming a village leader.",
   keywords: ["werewolf trust building", "mafia credibility", "werewolf alliances", "prove innocent werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-build-trust" },
+  alternates: { canonical: `${SITE_URL}/guides/how-to-build-trust` },
 };
 
 const faqItems = [

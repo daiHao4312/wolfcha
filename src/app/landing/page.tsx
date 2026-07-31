@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import { LandingContent } from "./LandingContent";
 import {
   JsonLd,
@@ -38,23 +39,23 @@ export const metadata: Metadata = {
     "社交推理游戏",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/landing",
+    canonical: `${SITE_URL}/landing`,
     languages: {
-      "en": "https://wolf-cha.com/landing",
-      "zh-CN": "https://wolf-cha.com/landing",
+      "en": `${SITE_URL}/landing`,
+      "zh-CN": `${SITE_URL}/landing`,
     },
   },
   openGraph: {
     title: "Wolfcha - AI Werewolf Game | AI狼人杀",
     description:
       "Play Werewolf with AI opponents. Single-player social deduction with AI players that speak, bluff, suspect, and vote. 免费AI狼人杀，一个人也能玩！",
-    url: "https://wolf-cha.com/landing",
+    url: `${SITE_URL}/landing`,
     siteName: "Wolfcha",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
     title: "Wolfcha - AI Werewolf Game | AI狼人杀",
     description:
       "Play Werewolf with AI opponents. Single-player social deduction game with AI dialogue, bluffing, and voting. 免费AI狼人杀！",
-    images: ["https://wolf-cha.com/og-image.png"],
+    images: [SITE_OG_IMAGE],
   },
   robots: {
     index: true,

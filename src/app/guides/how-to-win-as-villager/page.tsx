@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
   title: "How to Win as Villager: Village Team Strategy Guide | Wolfcha",
   description: "Master village team strategy in Werewolf. Learn discussion tactics, voting coordination, wolf identification, and how to lead the village to victory.",
   keywords: ["werewolf villager strategy", "how to win as villager", "village team werewolf", "find werewolves", "mafia town strategy"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-win-as-villager" },
-  openGraph: { title: "How to Win as Villager: Complete Strategy | Wolfcha", url: "https://wolf-cha.com/guides/how-to-win-as-villager", type: "article" },
+  alternates: { canonical: `${SITE_URL}/guides/how-to-win-as-villager` },
+  openGraph: { title: "How to Win as Villager: Complete Strategy | Wolfcha", url: `${SITE_URL}/guides/how-to-win-as-villager`, type: "article" },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [

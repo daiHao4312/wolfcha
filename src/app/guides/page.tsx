@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   title: "Werewolf Game Guides: Complete Strategy & Rules Hub | Wolfcha",
   description: "Comprehensive Werewolf game guides covering rules, strategies, role tactics, and tips for both beginners and advanced players. Master every aspect of the game.",
   keywords: ["werewolf guides", "werewolf strategy", "mafia game guides", "werewolf tips", "how to play werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides" },
+  alternates: { canonical: `${SITE_URL}/guides` },
 };
 
 const guideCategories = [

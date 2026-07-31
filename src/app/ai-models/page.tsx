@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   description:
     "Wolfcha is a model arena where different AI models play Werewolf with unique personalities and reasoning styles. Watch DeepSeek, Qwen, Claude, Gemini, and more argue, bluff, and deduce.",
   alternates: {
-    canonical: "https://wolf-cha.com/ai-models",
+    canonical: `${SITE_URL}/ai-models`,
   },
   robots: {
     index: false,
@@ -25,11 +26,11 @@ export const metadata: Metadata = {
     title: "AI Model Arena — Watch LLMs Play Werewolf | Wolfcha",
     description:
       "A model arena where different AI models play Werewolf (Mafia) with unique personalities and reasoning styles. Compare how they think, argue, and deceive.",
-    url: "https://wolf-cha.com/ai-models",
+    url: `${SITE_URL}/ai-models`,
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",
@@ -359,7 +360,7 @@ function buildOrganizationListJsonLd() {
       position: idx + 1,
       name: model.name,
       description: model.tagline,
-      url: `https://wolf-cha.com/models/${model.key}`,
+      url: `${SITE_URL}/models/${model.key}`,
     })),
   };
 }

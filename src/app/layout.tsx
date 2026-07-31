@@ -3,8 +3,8 @@ import { cookies, headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { Analytics } from "@vercel/analytics/next"
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { SITE_URL, GA_ID } from "@/lib/site-config";
 import { STORAGE_KEY, defaultLocale, isSupportedLocale, localeToHtmlLang, type AppLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 import { JsonLd, getGameJsonLd, getWebsiteJsonLd, getOrganizationJsonLd } from "@/components/seo/JsonLd";
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: defaultMessages.app.title,
     locale: localeToHtmlLang[defaultLocale],
-    url: "https://wolf-cha.com",
+    url: SITE_URL,
     images: [
       {
         url: "/og-image.png",
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/brand/wolfcha-favicon.svg",
   },
-  metadataBase: new URL("https://wolf-cha.com"),
+  metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
     languages: {
@@ -113,20 +113,23 @@ export default async function RootLayout({
 
   return (
     <html lang={localeToHtmlLang[initialLocale]} suppressHydrationWarning>
-      <Analytics />
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-3SSRH8KPLY"
-          strategy="afterInteractive"
-        />
-        <Script id="ga-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-3SSRH8KPLY');
-          `}
-        </Script>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body className="antialiased">
         <JsonLd data={getWebsiteJsonLd()} />

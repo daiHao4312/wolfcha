@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -24,15 +25,15 @@ export const metadata: Metadata = {
     "werewolf fake claim",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/how-to-win-as-werewolf",
+    canonical: `${SITE_URL}/guides/how-to-win-as-werewolf`,
   },
   openGraph: {
     title: "How to Win as Werewolf: Master the Art of Deception | Wolfcha",
     description:
       "Complete werewolf strategy guide - deception tactics, kill selection, fake claiming, and coordination to ensure wolf victory.",
-    url: "https://wolf-cha.com/guides/how-to-win-as-werewolf",
+    url: `${SITE_URL}/guides/how-to-win-as-werewolf`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Strategy Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Strategy Guide" }],
   },
 };
 
@@ -41,12 +42,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "How to Win as Werewolf: Complete Strategy Guide",
   description: "Master the art of deception and dominate as the werewolf team with comprehensive strategies for kill selection, fake claiming, and team coordination.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: SITE_OG_IMAGE,
+  author: { "@type": "Organization", name: "Wolfcha", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: SITE_LOGO } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/how-to-win-as-werewolf" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/guides/how-to-win-as-werewolf` },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [

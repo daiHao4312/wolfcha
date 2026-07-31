@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
   title: "Hunter Strategy Guide: Death Shot Tactics in Werewolf | Wolfcha",
   description: "Master the Hunter role in Werewolf. Learn when to reveal, who to shoot, timing your death shot, and turning elimination into victory.",
   keywords: ["werewolf hunter strategy", "hunter role werewolf", "hunter shot tactics", "mafia vigilante"],
-  alternates: { canonical: "https://wolf-cha.com/guides/hunter-strategy" },
-  openGraph: { title: "Hunter Strategy: Turn Death Into Victory | Wolfcha", url: "https://wolf-cha.com/guides/hunter-strategy", type: "article" },
+  alternates: { canonical: `${SITE_URL}/guides/hunter-strategy` },
+  openGraph: { title: "Hunter Strategy: Turn Death Into Victory | Wolfcha", url: `${SITE_URL}/guides/hunter-strategy`, type: "article" },
 };
 
 const faqItems = [

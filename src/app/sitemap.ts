@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import { roleLandingKeys } from "@/components/seo/landing/roleLandingData";
 import { soloLandingKeys } from "@/components/seo/landing/soloLandingData";
 import { experienceLandingKeys } from "@/components/seo/landing/experienceLandingData";
@@ -28,7 +29,7 @@ const guidePages = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://wolf-cha.com";
+  const baseUrl = SITE_URL;
   const lastModified = new Date();
 
   return [

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -24,17 +25,17 @@ export const metadata: Metadata = {
     "social deduction game rules",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/werewolf-rules",
+    canonical: `${SITE_URL}/guides/werewolf-rules`,
   },
   openGraph: {
     title: "Werewolf Game Rules: Complete Official Guide | Wolfcha",
     description:
       "Learn the complete rules of Werewolf (Mafia) - night phases, day voting, role abilities, and winning strategies. Perfect for beginners and experienced players.",
-    url: "https://wolf-cha.com/guides/werewolf-rules",
+    url: `${SITE_URL}/guides/werewolf-rules`,
     type: "article",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Werewolf Game Rules Guide",
@@ -49,25 +50,25 @@ const articleJsonLd = {
   headline: "Werewolf Game Rules: Complete Official Guide for Beginners",
   description:
     "Master Werewolf (Mafia) game rules with our comprehensive guide covering night phases, day voting, role abilities, and winning strategies.",
-  image: "https://wolf-cha.com/og-image.png",
+  image: SITE_OG_IMAGE,
   author: {
     "@type": "Organization",
     name: "Wolfcha",
-    url: "https://wolf-cha.com",
+    url: SITE_URL,
   },
   publisher: {
     "@type": "Organization",
     name: "Wolfcha",
     logo: {
       "@type": "ImageObject",
-      url: "https://wolf-cha.com/logo.png",
+      url: SITE_LOGO,
     },
   },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
   mainEntityOfPage: {
     "@type": "WebPage",
-    "@id": "https://wolf-cha.com/guides/werewolf-rules",
+    "@id": `${SITE_URL}/guides/werewolf-rules`,
   },
 };
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE, SITE_LOGO } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -23,14 +24,14 @@ export const metadata: Metadata = {
     "mafia doctor strategy",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/witch-strategy",
+    canonical: `${SITE_URL}/guides/witch-strategy`,
   },
   openGraph: {
     title: "Witch Strategy Guide: Master Your Potions | Wolfcha",
     description: "Learn optimal Witch strategy - when to save with antidote, when to poison, and how to maximize your impact on the game.",
-    url: "https://wolf-cha.com/guides/witch-strategy",
+    url: `${SITE_URL}/guides/witch-strategy`,
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Witch Strategy Guide" }],
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: "Werewolf Witch Strategy Guide" }],
   },
 };
 
@@ -39,9 +40,9 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Witch Strategy Guide: Master the Potions in Werewolf",
   description: "Complete strategy guide for playing the Witch role in Werewolf, including potion timing, save decisions, and poison targets.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: SITE_OG_IMAGE,
+  author: { "@type": "Organization", name: "Wolfcha", url: SITE_URL },
+  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: SITE_LOGO } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
 };

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: "How to Play Werewolf with AI: Solo Play Guide | Wolfcha",
   description: "Learn how to play Werewolf with AI opponents online. Practice deduction, bluffing, voting, and role strategy in a solo Werewolf game without needing friends.",
   keywords: ["play werewolf with ai", "werewolf ai opponents", "solo werewolf", "werewolf practice", "ai werewolf game", "play werewolf online", "single player werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-play-werewolf-with-ai" },
+  alternates: { canonical: `${SITE_URL}/guides/how-to-play-werewolf-with-ai` },
 };
 
 const aiSeats = [

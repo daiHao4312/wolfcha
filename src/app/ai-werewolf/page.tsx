@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL, SITE_OG_IMAGE } from "@/lib/site-config";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingPageWrapper } from "@/components/seo/MarketingPageWrapper";
@@ -16,17 +17,17 @@ export const metadata: Metadata = {
   description:
     "Play Werewolf (Mafia) online with AI opponents. Wolfcha is a solo social deduction game where AI players talk, bluff, accuse, defend, vote, and react like a real table. No friends or download needed.",
   alternates: {
-    canonical: "https://wolf-cha.com/ai-werewolf",
+    canonical: `${SITE_URL}/ai-werewolf`,
   },
   openGraph: {
     title: "AI Werewolf (Mafia) Game — Play Solo | Wolfcha",
     description:
       "Play Werewolf (Mafia) solo against AI opponents. A browser-based social deduction game with classic roles, AI dialogue, voting, bluffing, and optional voice acting.",
-    url: "https://wolf-cha.com/ai-werewolf",
+    url: `${SITE_URL}/ai-werewolf`,
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: SITE_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Wolfcha - AI Werewolf Game",
@@ -157,7 +158,7 @@ function buildGameJsonLd() {
     "@type": "VideoGame",
     name: "Wolfcha - AI Werewolf Game",
     description: "A solo Werewolf (Mafia) social deduction game where you play against AI opponents that reason, bluff, accuse, defend, and vote.",
-    url: "https://wolf-cha.com/ai-werewolf",
+    url: `${SITE_URL}/ai-werewolf`,
     genre: ["Social Deduction", "Party Game", "Strategy"],
     gamePlatform: "Web Browser",
     applicationCategory: "Game",
