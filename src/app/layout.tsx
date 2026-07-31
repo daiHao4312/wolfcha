@@ -113,7 +113,7 @@ export default async function RootLayout({
 
   return (
     <html lang={localeToHtmlLang[initialLocale]} suppressHydrationWarning>
-      <head>
+      <body className="antialiased">
         {GA_ID && (
           <>
             <Script
@@ -130,8 +130,6 @@ export default async function RootLayout({
             </Script>
           </>
         )}
-      </head>
-      <body className="antialiased">
         <JsonLd data={getWebsiteJsonLd()} />
         <JsonLd data={getGameJsonLd()} />
         <JsonLd data={getOrganizationJsonLd()} />
