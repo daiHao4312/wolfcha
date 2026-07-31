@@ -37,9 +37,13 @@ export const GAME_TEMPERATURE = {
   SPEECH: AI_TEMPERATURE.CREATIVE,
   
   // 玩家行动 (投票、技能)
-  // 稍微提高一点点(0.4)，让“蠢萌”或“冲动”角色的行为有概率出现，
+  // 稍微提高一点点(0.4)，让"蠢萌"或"冲动"角色的行为有概率出现，
   // 但主要还是依靠 Prompt 中的逻辑来驱动
   ACTION: AI_TEMPERATURE.LOGIC,
+
+  // 狼人击杀决策
+  // 需要比普通行动更高的随机性，避免刀法被好人摸清规律
+  WOLF_ACTION: 0.6,
 
   // Badge signup is an early-game "meta" decision; allow more variety.
   BADGE_SIGNUP: AI_TEMPERATURE.BALANCED,

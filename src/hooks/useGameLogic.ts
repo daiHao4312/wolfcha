@@ -1329,7 +1329,8 @@ export function useGameLogic() {
       const makeId = () => generateUUID();
 
       // In spectator mode, there's no human player - all seats are AI
-      const humanSeat = isSpectatorMode ? -1 : 0;
+      // 随机分配座位，避免人类玩家固定在 1 号位导致 AI 位置偏差
+      const humanSeat = isSpectatorMode ? -1 : Math.floor(Math.random() * totalPlayers);
 
       const aiSeats = Array.from({ length: totalPlayers }, (_, seat) => seat).filter(
         (seat) => seat !== humanSeat

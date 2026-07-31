@@ -1055,7 +1055,7 @@
         "rules": "{winCondition}",
         "teammateVotes": "【Teammate intent】\n{lines}",
         "voteLine": "- Seat {seat} ({name}) wants to kill: Seat {targetSeat}{targetName}",
-        "task": "【Werewolf Skill】\nEach night wolves collectively decide to kill one player. Can kill good players, teammates (self-kill), or skip (no kill).\n\n【Task】\nChoose one player to kill.\n{teammateVotesSection}\n\nOptions: {options}\n",
+        "task": "【Werewolf Skill】\nEach night wolves collectively decide to kill one player. Can kill good players, teammates (self-kill), or skip (no kill).\n\n【Task】\nChoose one player to kill. Base your choice on the game situation and strategy. Do NOT simply pick the first seat in the list.\n{teammateVotesSection}\n\nOptions: {options}\n",
         "user": "{context}\n\nWhich seat do you want to kill?\n\n【Format】\nReturn a strict JSON object only. No code blocks, no explanations, no extra text:\n{jsonFormat}"
       },
       "guard": {
@@ -1123,7 +1123,7 @@
       "guard": "【Guard Strategy】\n- Hide identity: When analyzing god positions, assume your role exists externally\n- Guard choice: Consider wolf kill patterns and mind-game\n- Guard seer when seer's survival value is high, guard witch when witch's value is high",
       "hunter": "【Hunter Strategy】\n- Hide identity: Can speak confidently without fear of attack\n- Claim identity to lead votes when wolf blade is ahead\n- When eliminated, shoot the most suspicious wolf",
       "villager": "【Villager Strategy】\n- Clear water: Explain identity reasoning with logic, don't hard-define others\n- Find seer and side/vote\n- When attacked, verbally clear water without claiming identity\n- Can fake god role to block kills when wolf blade is ahead",
-      "nightWolf": "【Night Strategy】Prioritize killing the good person who threatens wolves most. After eliminating seer on day 1, killing gods is more likely. Keep players who favor you for votes.",
+      "nightWolf": "【Night Strategy】Vary kill targets to avoid being predictable:\n- Kill gods/villagers: After seer appears day 1, killing gods is more likely, but counter-logic killing villagers is viable; if fake seer checked a civilian, killing villagers is more likely\n- Self-knife: Can self-knife to cooperate with fake seer (silver water makes iron wolf) or to fly badge, but don't overuse\n- Empty knife: Can skip kill to create peaceful night, confusing good people about guard/witch positions\n- Team wash: Kill good people who sided with wolves, creating incomplete wolf pit illusion\n- Keep favorable cards: When not affecting kill path, keep players who favor you for votes\n- Don't always target the same type of player every game; adapt to the situation",
       "nightSeer": "【Night Strategy】Prioritize checking suspicious or focal players. Avoid re-checking already verified players.",
       "nightWitch": "【Night Strategy】Save key roles (like seer) with antidote. Reserve poison for confirmed wolves or most suspicious charge wolves.",
       "nightGuard": "【Night Strategy】Mind-game guard choice. Guard seer when seer's value is high, guard witch when witch's value is high. Never guard same person two nights in a row."

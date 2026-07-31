@@ -1939,7 +1939,7 @@ export async function generateWolfAction(
       mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
         model: player.agentProfile!.modelRef.model,
         messages,
-        temperature: GAME_TEMPERATURE.ACTION,
+        temperature: GAME_TEMPERATURE.WOLF_ACTION,
         response_format: { type: "json_object" },
       }),
       (cleaned) => {

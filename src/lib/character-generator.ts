@@ -578,7 +578,21 @@ export async function generateCharacters(
     const baseProfiles = normalizedBase.profiles;
 
     if (!isValidBaseProfiles(baseProfiles, count)) {
-      throw new Error("Base profile generation returned invalid schema");
+      // 记录具体验证失败原因，方便排查
+      const reason = !Array.isArray(baseProfiles) ? "not array"
+        : baseProfiles.length !== count ? `count mismatch: got ${baseProfiles.length}, expected ${count}`
+        : baseProfiles.map((p, i) => {
+            if (!isRecord(p)) return `[${i}] not object`;
+            const issues: string[] = [];
+            if (typeof p.displayName !== "string" || !p.displayName.trim()) issues.push("bad displayName");
+            if (!isValidGender(p.gender)) issues.push(`bad gender: ${p.gender}`);
+            if (typeof p.age !== "number" || !Number.isFinite(p.age) || p.age < 16 || p.age > 70) issues.push(`bad age: ${p.age}`);
+            if (!isValidMbti(p.mbti)) issues.push(`bad mbti: ${p.mbti}`);
+            if (typeof p.basicInfo !== "string" || !p.basicInfo.trim()) issues.push("bad basicInfo");
+            return issues.length ? `[${i}] ${issues.join(", ")}` : null;
+          }).filter(Boolean).join("; ") || "duplicate names or unknown";
+      console.error("[character-gen] Base profile validation failed:", reason);
+      throw new Error(`Base profile generation returned invalid schema: ${reason}`);
     }
 
     options?.onBaseProfiles?.(baseProfiles);
