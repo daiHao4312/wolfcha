@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface GameBackgroundProps {
   isNight: boolean;
@@ -20,8 +21,44 @@ function CornerDeco({ className }: { className: string }) {
   );
 }
 
+/** 白天背景层样式（静态与动画共用） */
+const dayStyle: React.CSSProperties = {
+  backgroundColor: "var(--bg-day-main)",
+  backgroundImage: `radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.05), transparent 70%), url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
+  willChange: "opacity",
+  transform: "translateZ(0)",
+};
+
+/** 夜晚背景层样式（静态与动画共用） */
+const nightStyle: React.CSSProperties = {
+  backgroundColor: "var(--bg-dark)",
+  backgroundImage: `radial-gradient(circle at 50% 50%, rgba(138, 28, 28, 0.05), transparent 60%), url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
+  willChange: "opacity",
+  transform: "translateZ(0)",
+};
+
 export function GameBackground({ isNight, isBlinking = false }: GameBackgroundProps) {
+  // 延迟启用动画，避免 SSR 水合不匹配
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const fadeDuration = isBlinking ? 0 : 1.5;
+
+  // 服务端 / 首次客户端渲染：纯静态 div，opacity 与 animate 目标值一致
+  if (!mounted) {
+    return (
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        {/* 白天背景 */}
+        <div className="absolute inset-0" style={{ ...dayStyle, opacity: isNight ? 0 : 1 }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-day-from)]/80 via-[var(--bg-day-via)]/80 to-[var(--bg-day-to)]/80 mix-blend-overlay" />
+        </div>
+        {/* 夜晚背景 */}
+        <div className="absolute inset-0" style={{ ...nightStyle, opacity: isNight ? 1 : 0 }} />
+      </div>
+    );
+  }
+
+  // 客户端挂载后：使用 framer-motion 动画版本
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       {/* Day Background - Refined for Exquisite Look */}
@@ -30,15 +67,7 @@ export function GameBackground({ isNight, isBlinking = false }: GameBackgroundPr
         initial={false}
         animate={{ opacity: isNight ? 0 : 1 }}
         transition={{ duration: fadeDuration }}
-        style={{
-            backgroundColor: "var(--bg-day-main)",
-            backgroundImage: `
-              radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.05), transparent 70%),
-              url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")
-            `,
-            willChange: "opacity",
-            transform: "translateZ(0)",
-          }}
+        style={dayStyle}
       >
         {/* Subtle warm gradients for day */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-day-from)]/80 via-[var(--bg-day-via)]/80 to-[var(--bg-day-to)]/80 mix-blend-overlay" />
@@ -47,19 +76,10 @@ export function GameBackground({ isNight, isBlinking = false }: GameBackgroundPr
       {/* Night Background - 参考 style-unification-preview.html */}
       <motion.div
         className="absolute inset-0"
-        style={{
-          backgroundColor: "var(--bg-dark)",
-          backgroundImage: `
-            radial-gradient(circle at 50% 50%, rgba(138, 28, 28, 0.05), transparent 60%),
-            url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")
-          `,
-          willChange: "opacity",
-          transform: "translateZ(0)",
-        }}
+        style={nightStyle}
         initial={false}
         animate={{ opacity: isNight ? 1 : 0 }}
         transition={{ duration: fadeDuration }}
-        
       />
 
       {/* 夜晚雾气效果 - 参考 waiting-preview.html */}
@@ -74,11 +94,11 @@ export function GameBackground({ isNight, isBlinking = false }: GameBackgroundPr
             willChange: "opacity, transform",
           }}
           initial={false}
-          animate={{ 
+          animate={{
             opacity: isNight ? 0.8 : 0,
             scale: isNight ? [1, 1.05, 1] : 1,
           }}
-          transition={{ 
+          transition={{
             opacity: { duration: fadeDuration },
             scale: { duration: 10, repeat: Infinity, ease: "easeInOut" }
           }}
@@ -106,11 +126,11 @@ export function GameBackground({ isNight, isBlinking = false }: GameBackgroundPr
           animate={{ opacity: isNight ? 0.4 : 0 }}
           transition={{ duration: fadeDuration }}
         >
-          <div 
+          <div
             className="absolute top-1/3 left-1/3 w-96 h-96 rounded-full filter blur-[100px] animate-pulse"
             style={{ background: "rgba(138, 28, 28, 0.15)" }}
           />
-          <div 
+          <div
             className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full filter blur-[80px] animate-pulse"
             style={{ background: "rgba(197, 160, 89, 0.08)", animationDelay: "2s" }}
           />

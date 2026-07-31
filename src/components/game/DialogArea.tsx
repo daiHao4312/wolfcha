@@ -512,7 +512,9 @@ export function DialogArea({
     if (portraitPlayer) lastPortraitPlayerRef.current = portraitPlayer;
   }, [portraitPlayer?.playerId]);
 
-  const stablePortraitPlayer = portraitPlayer || lastPortraitPlayerRef.current;
+  // 投票阶段不保留上一个发言者的立绘，避免立绘残留
+  const isVotingPhase = phase === "DAY_BADGE_ELECTION" || phase === "DAY_VOTE";
+  const stablePortraitPlayer = isVotingPhase ? portraitPlayer : (portraitPlayer || lastPortraitPlayerRef.current);
 
   const portraitNode = (
     <AnimatePresence mode="popLayout" initial={false}>
